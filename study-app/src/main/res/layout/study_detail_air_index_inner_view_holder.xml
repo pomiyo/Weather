@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_air_index_inner_view_holder.xml
+  One pollutant row inside the AQI card.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="@dimen/study_daily_row_padding">
+
+    <TextView
+        android:id="@+id/pollutant_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+    <TextView
+        android:id="@+id/pollutant_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.TextAppearance.CardValue" />
+
+</LinearLayout>

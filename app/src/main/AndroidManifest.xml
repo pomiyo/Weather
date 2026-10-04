@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of the Samsung Weather manifest.
+
+  Structurally faithful to the decoded original (reports/static-inspection.md) in the
+  parts that carry architecture:
+    * the launcher activity is android:enabled="false" - the real app normally has NO
+      app icon and is reached via widgets, deep links and notifications
+    * one Activity per weather condition, each with its own splash theme
+    * three exported content providers over one dataset, at three permission tiers
+    * the receivers that convert broadcasts into WorkManager enqueues
+
+  Deliberately NOT reproduced:
+    * the plaintext Google Maps API key the original declares (kept redacted)
+    * Samsung signature/system permissions, which a debug-signed build cannot hold
+    * the <queries> entries for Samsung companion packages
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SET_ALARM" />
+
+    <!--
+      The original declares a signature-level permission for its system provider tier.
+      A reconstruction cannot be platform-signed, so the tier exists and denies - see
+      StudySignatureCheckContentProvider.
+    -->
+    <permission
+        android:name="dev.local.weatherstudy.permission.READ_WEATHER"
+        android:protectionLevel="dangerous" />
+
+    <application
+        android:name=".StudyWeatherApp"
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/study_app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Study.Theme.AppCompat.Weather"
+        tools:targetApi="35">
+
+        <!--
+          WorkManager is configured on demand by StudyWeatherApp (Configuration.Provider),
+          because the workers are @HiltWorker and need the Hilt factory. The library's own
+          startup initializer has to be removed, or it initialises WorkManager first with
+          the default factory and every injected worker fails to instantiate.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
+        <!--
+          The single Activity for the whole phone UI. singleTop + exported, as in the
+          original, so every external entry point reuses one instance.
+        -->
+        <activity
+            android:name="dev.local.weatherstudy.app.StudyMainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Study.Theme.AppCompat.Weather" />
+
+        <!--
+          Corresponds to AppLauncherActivity, which the original declares DISABLED.
+          Samsung Weather normally has no app icon. Kept disabled for fidelity.
+        -->
+        <activity
+            android:name="dev.local.weatherstudy.app.StudyAppLauncherActivity"
+            android:enabled="false"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          Reconstruction-only: an always-enabled launcher so the project can be started
+          from Android Studio. The original has no equivalent; documented as a deviation
+          in reports/screen-map.md §5.
+        -->
+        <activity
+            android:name="dev.local.weatherstudy.app.StudyDevLauncherActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- the deep-link entry point; forwards to a themed splash -->
+        <activity
+            android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashCommonActivity"
+            android:exported="true"
+            android:theme="@style/Study.Theme.Splash">
+            <intent-filter>
+                <action android:name="dev.local.weatherstudy.intent.action.DETAIL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- one Activity per condition: the theme IS the contribution -->
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashSunnyActivity"
+            android:theme="@style/Study.Theme.Splash.Sunny" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashSunnyNightActivity"
+            android:theme="@style/Study.Theme.Splash.SunnyNight" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashPartlySunnyNightActivity"
+            android:theme="@style/Study.Theme.Splash.PartlySunnyNight" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashCloudyActivity"
+            android:theme="@style/Study.Theme.Splash.Cloudy" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashRainActivity"
+            android:theme="@style/Study.Theme.Splash.Rain" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashThunderstormActivity"
+            android:theme="@style/Study.Theme.Splash.Thunderstorm" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashColdActivity"
+            android:theme="@style/Study.Theme.Splash.Cold" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashHotActivity"
+            android:theme="@style/Study.Theme.Splash.Hot" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashSandstormActivity"
+            android:theme="@style/Study.Theme.Splash.Sandstorm" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashSunriseActivity"
+            android:theme="@style/Study.Theme.Splash.Sunrise" />
+        <activity android:name="dev.local.weatherstudy.app.splash.StudyDetailSplashSunsetActivity"
+            android:theme="@style/Study.Theme.Splash.Sunset" />
+
+        <!-- receivers: every one resolves to a WorkManager enqueue -->
+        <receiver
+            android:name="dev.local.weatherstudy.receiver.StudySystemReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="dev.local.weatherstudy.receiver.StudyIntervalRefreshReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="dev.local.weatherstudy.action.INTERVAL_REFRESH" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="dev.local.weatherstudy.receiver.StudyWidgetActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="dev.local.weatherstudy.action.WIDGET_REFRESH" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="dev.local.weatherstudy.receiver.StudyWeatherGeofenceReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="dev.local.weatherstudy.receiver.StudyNotificationActionReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="dev.local.weatherstudy.receiver.StudyLegacyReceiver"
+            android:exported="false" />
+
+        <!-- Glance widget receivers: one per variant, because the info XML binds to a class -->
+        <receiver
+            android:name="dev.local.weatherstudy.widget.appwidget.StudyWeatherAppWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/study_weather_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name="dev.local.weatherstudy.widget.appwidget.StudyWeatherAppWidget2x1"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/study_weather_widget_2x1_info" />
+        </receiver>
+
+        <receiver
+            android:name="dev.local.weatherstudy.widget.appwidget.StudyWeatherForecastAppWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/study_weather_forecast_widget_info" />
+        </receiver>
+
+        <!-- complications: one receiver per kind, each with its own info XML -->
+        <receiver
+            android:name="dev.local.weatherstudy.widget.complication.receiver.StudyComplicationSimpleWeatherReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="dev.local.weatherstudy.widget.complication.receiver.StudyComplicationWeatherDetailReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="dev.local.weatherstudy.widget.complication.receiver.StudyComplicationAirQualityReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="dev.local.weatherstudy.widget.complication.receiver.StudyComplicationFineDustReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="dev.local.weatherstudy.widget.complication.receiver.StudyComplicationUVReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="dev.local.weatherstudy.widget.complication.receiver.StudyComplicationPrecipitationReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="dev.local.weatherstudy.widget.complication.receiver.StudyComplicationSunriseSunsetReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="dev.local.weatherstudy.widget.complication.receiver.StudyComplicationMoonReceiver"
+            android:exported="false" />
+
+        <!--
+          Three providers, one dataset, three trust tiers. The legacy authority exists so
+          long-installed companion apps keep working - see StudyLocalAuthorityProvider.
+        -->
+        <provider
+            android:name="dev.local.weatherstudy.provider.StudyWeatherContentProvider"
+            android:authorities="dev.local.weatherstudy.provider.legacy"
+            android:enabled="true"
+            android:exported="false" />
+
+        <provider
+            android:name="dev.local.weatherstudy.provider.StudySystemLevelContentProvider"
+            android:authorities="dev.local.weatherstudy.provider.system"
+            android:enabled="true"
+            android:exported="false" />
+
+        <provider
+            android:name="dev.local.weatherstudy.provider.StudyDangerousLevelContentProvider"
+            android:authorities="dev.local.weatherstudy.provider"
+            android:enabled="true"
+            android:exported="false"
+            android:readPermission="dev.local.weatherstudy.permission.READ_WEATHER" />
+    </application>
+</manifest>

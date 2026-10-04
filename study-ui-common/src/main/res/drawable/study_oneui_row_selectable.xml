@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- a row inside a card: no fill of its own, a rounded ripple so a press respects the card's corners -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="@color/study_oneui_card_pressed">
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/study_oneui_card_radius" />
+            <solid android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+</ripple>

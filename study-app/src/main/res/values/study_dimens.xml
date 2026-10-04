@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Educational reconstruction. Values are the reconstruction's own; the original's
+     dimens are among the 300 values* qualifier directories and are not reproduced. -->
+<resources>
+    <dimen name="study_card_margin">5dp</dimen>
+    <dimen name="study_card_padding">20dp</dimen>
+    <dimen name="study_card_inner_spacing">12dp</dimen>
+    <dimen name="study_card_corner_radius">26dp</dimen>
+
+    <dimen name="study_hourly_item_width">64dp</dimen>
+    <dimen name="study_hourly_icon_size">32dp</dimen>
+    <dimen name="study_hourly_graph_height">44dp</dimen>
+    <dimen name="study_hourly_wind_size">24dp</dimen>
+
+    <dimen name="study_daily_day_width">56dp</dimen>
+    <dimen name="study_daily_precip_width">40dp</dimen>
+    <dimen name="study_daily_icon_size">30dp</dimen>
+    <dimen name="study_daily_temp_width">40dp</dimen>
+    <dimen name="study_daily_range_height">6dp</dimen>
+    <dimen name="study_daily_row_padding">10dp</dimen>
+
+    <dimen name="study_index_graph_height">44dp</dimen>
+    <dimen name="study_air_bar_height">28dp</dimen>
+    <dimen name="study_sun_arc_height">96dp</dimen>
+    <dimen name="study_moon_size">56dp</dimen>
+    <dimen name="study_bottom_index_icon">24dp</dimen>
+    <dimen name="study_bottom_index_width">80dp</dimen>
+
+    <dimen name="study_precipitation_item_width">48dp</dimen>
+    <dimen name="study_precipitation_bar_height">64dp</dimen>
+
+    <dimen name="study_alert_stripe_width">4dp</dimen>
+    <dimen name="study_insight_icon_size">32dp</dimen>
+
+    <dimen name="study_life_style_icon">32dp</dimen>
+    <dimen name="study_life_style_band_width">72dp</dimen>
+    <dimen name="study_life_style_band_height">8dp</dimen>
+    <dimen name="study_life_tips_width">160dp</dimen>
+    <dimen name="study_by_time_width">48dp</dimen>
+    <dimen name="study_chevron_size">24dp</dimen>
+
+    <dimen name="study_radar_height">180dp</dimen>
+    <dimen name="study_content_image_size">72dp</dimen>
+    <dimen name="study_content_tile_image_height">96dp</dimen>
+    <dimen name="study_indicator_logo_width">80dp</dimen>
+    <dimen name="study_indicator_logo_height">20dp</dimen>
+
+    <dimen name="study_header_expanded_height">340dp</dimen>
+    <dimen name="study_toolbar_icon">48dp</dimen>
+    <dimen name="study_radar_play_button_size">48dp</dimen>
+    <dimen name="study_radar_view_logo_height">16dp</dimen>
+    <dimen name="study_radar_attribution_padding">6dp</dimen>
+    <dimen name="study_detail_list_bottom_padding">24dp</dimen>
+    <dimen name="study_insight_pager_height">56dp</dimen>
+</resources>

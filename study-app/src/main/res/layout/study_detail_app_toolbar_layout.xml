@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_app_toolbar_layout: the city name (visible once the
+  header has collapsed) and the two actions the original puts here.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/toolbar_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+                android:id="@+id/toolbar_city"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:alpha="0"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="@style/Study.TextAppearance.ToolbarTitle" />
+
+            <ImageButton
+                android:id="@+id/toolbar_locations"
+                android:layout_width="@dimen/study_toolbar_icon"
+                android:layout_height="@dimen/study_toolbar_icon"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/study_action_locations"
+                android:src="@drawable/study_ic_list" />
+
+            <ImageButton
+                android:id="@+id/toolbar_settings"
+                android:layout_width="@dimen/study_toolbar_icon"
+                android:layout_height="@dimen/study_toolbar_icon"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/study_action_settings"
+                android:src="@drawable/study_ic_settings" />
+        </LinearLayout>
+    </androidx.appcompat.widget.Toolbar>
+</FrameLayout>

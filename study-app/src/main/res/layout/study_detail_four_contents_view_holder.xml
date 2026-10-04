@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_four_contents_view_holder.xml
+  Shared by THREE card types - Video, NewsAndVideo and TodayStoriesAndVideo. The original
+  inflates this one layout for all three (see DetailViewHolderFactory).
+-->
+<dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/study_card_margin"
+    android:background="@drawable/study_card_background"
+    android:padding="@dimen/study_card_padding">
+
+    <TextView
+        android:id="@+id/card_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.TextAppearance.CardTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/four_contents_list"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/study_card_inner_spacing"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:spanCount="2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/card_title" />
+
+</dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

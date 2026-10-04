@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_hourly_inner_view_holder.xml
+  One hour. The bezier view is sized to the full row height and draws only its own curve slice.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="wrap_content"
+    android:layout_width="@dimen/study_hourly_item_width"
+    android:clipChildren="false"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/hourly_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+    <ImageView
+        android:id="@+id/hourly_icon"
+        android:layout_width="@dimen/study_hourly_icon_size"
+        android:layout_height="@dimen/study_hourly_icon_size"
+        android:layout_gravity="center_horizontal"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/hourly_precipitation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+    <dev.local.weatherstudy.app.detail.view.StudyBezierLineGraphItemView
+        android:id="@+id/hourly_graph"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/study_hourly_graph_height" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/hourly_temperature"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAppearance="@style/Study.TextAppearance.CardValue" />
+
+    <dev.local.weatherstudy.app.detail.view.StudyWindGraph
+        android:id="@+id/hourly_wind"
+        android:layout_width="@dimen/study_hourly_wind_size"
+        android:layout_height="@dimen/study_hourly_wind_size"
+        android:layout_gravity="center_horizontal"
+        android:visibility="gone" />
+
+</LinearLayout>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_indicator_view_holder: the closing line of the
+  page - where the data comes from, when it was fetched, and the control to fetch again.
+  It has no panel of its own; it reads as a footer under the cards.
+-->
+<dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="24dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageButton
+        android:id="@+id/indicator_refresh"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/study_action_refresh"
+        android:src="@drawable/study_ic_refresh"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/indicator_update_time"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.TextAppearance.CardValue"
+        app:layout_constraintEnd_toStartOf="@id/indicator_refresh"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <include
+        android:id="@+id/indicator_text_logo"
+        layout="@layout/study_detail_indicator_with_text_logo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toStartOf="@id/indicator_refresh"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/indicator_update_time" />
+
+    <include
+        android:id="@+id/indicator_image_logo"
+        layout="@layout/study_detail_indicator_with_image_logo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/indicator_refresh"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/indicator_update_time" />
+</dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

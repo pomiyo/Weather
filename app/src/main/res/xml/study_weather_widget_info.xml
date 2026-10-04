@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of the original's appwidget-provider XML
+  (weather_clock_provider.xml / weather_forecast_provider.xml / supportcellsizeinfo_*.xml).
+  The size options are what decide which Glance FRAME renders - see
+  dev.local.weatherstudy.widget.home.view.frame.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of res/navigation/weather_nav.xml.
+
+  Reproduced structurally from the decoded original: same start destination, same nested
+  settings graph, same global actions with popUpTo=main_nav/popUpToInclusive=true, and
+  the same argument sets - including `result_receiver`, which is how the widget editor
+  and external callers get a result back out of the graph.
+
+  See reports/screen-map.md §1.2 for the full edge table.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_nav"
+    app:startDestination="@id/main">
+
+    <!-- the start destination has no UI: it runs the condition chain and routes -->
+    <fragment
+        android:id="@+id/main"
+        android:name="dev.local.weatherstudy.app.main.StudyMainFragment"
+        android:label="Main" />
+
+    <fragment
+        android:id="@+id/detail"
+        android:name="dev.local.weatherstudy.app.detail.fragment.StudyDetailFragment"
+        android:label="Detail">
+        <argument
+            android:name="location_key"
+            android:defaultValue=""
+            app:argType="string"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_detail_to_location"
+            app:destination="@id/locations"
+            app:enterAnim="@anim/study_fragment_open_enter"
+            app:exitAnim="@anim/study_fragment_open_exit"
+            app:popEnterAnim="@anim/study_fragment_close_enter"
+            app:popExitAnim="@anim/study_fragment_close_exit" />
+        <action
+            android:id="@+id/action_detail_to_search"
+            app:destination="@id/search" />
+        <action
+            android:id="@+id/action_detail_to_setting"
+            app:destination="@id/settings_nav" />
+        <action
+            android:id="@+id/action_detail_to_lifestyle_setting"
+            app:destination="@id/lifestyle_setting" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/locations"
+        android:name="dev.local.weatherstudy.app.location.StudyLocationsFragment"
+        android:label="Locations">
+        <action
+            android:id="@+id/action_location_to_search"
+            app:destination="@id/search" />
+        <action
+            android:id="@+id/action_locations_to_settings"
+            app:destination="@id/settings_nav" />
+        <action
+            android:id="@+id/action_locations_to_detail"
+            app:destination="@id/detail"
+            app:popUpTo="@id/main_nav"
+            app:popUpToInclusive="true">
+            <argument
+                android:name="location_key"
+                android:defaultValue=""
+                app:argType="string" />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/search"
+        android:name="dev.local.weatherstudy.app.search.StudySearchFragment"
+        android:label="Search">
+        <action
+            android:id="@+id/action_search_to_location"
+            app:destination="@id/locations"
+            app:popUpTo="@id/locations"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_search_to_detail"
+            app:destination="@id/detail"
+            app:popUpTo="@id/main_nav"
+            app:popUpToInclusive="true">
+            <argument
+                android:name="location_key"
+                android:defaultValue=""
+                app:argType="string" />
+        </action>
+    </fragment>
+
+    <fragment
+        android:id="@+id/lifestyle_setting"
+        android:name="dev.local.weatherstudy.app.setting.lifestyle.StudyLifeStyleSettingsContainerFragment"
+        android:label="LifestyleSettingFragment" />
+
+    <fragment
+        android:id="@+id/get_current"
+        android:name="dev.local.weatherstudy.app.main.StudyGetCurrentFragment"
+        android:label="Get Current" />
+
+    <fragment
+        android:id="@+id/eula"
+        android:name="dev.local.weatherstudy.app.common.setting.eula.StudyEulaFragment"
+        android:label="EulaFragment" />
+
+    <fragment
+        android:id="@+id/app_permission"
+        android:name="dev.local.weatherstudy.app.setting.permissions.StudyPermissionsFragment"
+        android:label="AppPermission" />
+
+    <!-- nested settings graph, as in the original -->
+    <navigation
+        android:id="@+id/settings_nav"
+        app:startDestination="@id/settings">
+        <fragment
+            android:id="@+id/settings"
+            android:name="dev.local.weatherstudy.app.setting.settings.StudySettingsFragment"
+            android:label="Settings">
+            <action android:id="@+id/action_settings_to_eula" app:destination="@id/eula" />
+            <action android:id="@+id/action_settings_to_about" app:destination="@id/about" />
+            <action
+                android:id="@+id/action_settings_to_permission"
+                app:destination="@id/app_permission" />
+        </fragment>
+        <fragment
+            android:id="@+id/about"
+            android:name="dev.local.weatherstudy.app.setting.about.StudyAboutFragment"
+            android:label="About">
+            <action
+                android:id="@+id/action_about_to_licence"
+                app:destination="@id/open_source_license" />
+        </fragment>
+        <fragment
+            android:id="@+id/open_source_license"
+            android:name="dev.local.weatherstudy.app.setting.opensource.StudyOpenSourceLicenseFragment"
+            android:label="OpenSourceLicenseFragment" />
+    </navigation>
+
+    <!-- global actions: every external entry point replaces the whole back stack -->
+    <action
+        android:id="@+id/action_global_to_detail"
+        app:destination="@id/detail"
+        app:popUpTo="@id/main_nav"
+        app:popUpToInclusive="true">
+        <argument android:name="location_key" android:defaultValue="" app:argType="string" />
+    </action>
+    <action
+        android:id="@+id/action_global_to_location"
+        app:destination="@id/locations"
+        app:popUpTo="@id/main_nav"
+        app:popUpToInclusive="true" />
+    <action
+        android:id="@+id/action_global_to_search"
+        app:destination="@id/search"
+        app:popUpTo="@id/main_nav"
+        app:popUpToInclusive="true" />
+    <action
+        android:id="@+id/action_global_to_setting"
+        app:destination="@id/settings_nav"
+        app:popUpTo="@id/main_nav"
+        app:popUpToInclusive="true" />
+    <action
+        android:id="@+id/action_global_to_get_current"
+        app:destination="@id/get_current"
+        app:popUpTo="@id/main_nav"
+        app:popUpToInclusive="true" />
+    <action
+        android:id="@+id/action_global_to_eula"
+        app:destination="@id/eula"
+        app:popUpTo="@id/main_nav"
+        app:popUpToInclusive="true" />
+    <action
+        android:id="@+id/action_global_to_main"
+        app:destination="@id/main"
+        app:popUpTo="@id/main_nav"
+        app:popUpToInclusive="true" />
+    <action
+        android:id="@+id/action_global_to_app_permission"
+        app:destination="@id/app_permission"
+        app:popUpTo="@id/main_nav"
+        app:popUpToInclusive="true" />
+</navigation>

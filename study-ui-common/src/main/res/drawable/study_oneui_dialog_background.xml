@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:insetBottom="20dp">
+    <shape android:shape="rectangle">
+        <corners android:radius="@dimen/study_oneui_card_radius" />
+        <solid android:color="@color/study_oneui_dialog" />
+    </shape>
+</inset>

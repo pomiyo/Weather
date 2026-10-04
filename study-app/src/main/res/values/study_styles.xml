@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Educational reconstruction. The original's 50 sesl* theme attributes and its
+     Weather.Theme.* hierarchy are One UI's; these are neutral equivalents. -->
+<resources>
+    <!-- a card's title is a quiet label, not a headline: the content is the headline -->
+    <style name="Study.TextAppearance.CardTitle" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">#B8FFFFFF</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="Study.TextAppearance.CardValue" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+    </style>
+    <style name="Study.TextAppearance.CardCaption" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">#B8FFFFFF</item>
+    </style>
+    <style name="Study.TextAppearance.CardLargeValue" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">40sp</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+    </style>
+
+    <style name="Study.TextAppearance.ToolbarTitle" parent="TextAppearance.AppCompat.Title" />
+
+    <!--
+      Corresponds conceptually to the original's per-condition splash themes,
+      Weather.Theme.Splash.{Sunny,SunnyNight,PartlySunnyNight,Cloudy,Rain,Thunderstorm,
+      Cold,Hot,Sandstorm,Sunrise,Sunset}. Each themed splash Activity declares one so the
+      system can draw the right window background before any code runs.
+    -->
+    <style name="Study.Theme.Splash" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_default</item>
+    </style>
+
+    <style name="Study.Theme.Splash.Sunny">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_sunny</item>
+    </style>
+    <style name="Study.Theme.Splash.SunnyNight">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_sunny_night</item>
+    </style>
+    <style name="Study.Theme.Splash.PartlySunnyNight">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_partly_sunny_night</item>
+    </style>
+    <style name="Study.Theme.Splash.Cloudy">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_cloudy</item>
+    </style>
+    <style name="Study.Theme.Splash.Rain">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_rain</item>
+    </style>
+    <style name="Study.Theme.Splash.Thunderstorm">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_thunderstorm</item>
+    </style>
+    <style name="Study.Theme.Splash.Cold">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_cold</item>
+    </style>
+    <style name="Study.Theme.Splash.Hot">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_hot</item>
+    </style>
+    <style name="Study.Theme.Splash.Sandstorm">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_sandstorm</item>
+    </style>
+    <style name="Study.Theme.Splash.Sunrise">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_sunrise</item>
+    </style>
+    <style name="Study.Theme.Splash.Sunset">
+        <item name="android:windowBackground">@drawable/study_splash_gradient_sunset</item>
+    </style>
+</resources>

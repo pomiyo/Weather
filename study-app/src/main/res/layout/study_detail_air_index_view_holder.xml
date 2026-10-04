@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_air_index_view_holder.xml
+  The AQI card. StudyAirQualityBar takes its bands from StudyIndexGraphViewEntity,
+  because the banding is national - see StudyIndexLevel.AqiScale.
+-->
+<dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/study_card_margin"
+    android:background="@drawable/study_card_background"
+    android:padding="@dimen/study_card_padding">
+
+    <TextView
+        android:id="@+id/card_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.TextAppearance.CardTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+    <TextView
+        android:id="@+id/air_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/study_card_inner_spacing"
+        android:textAppearance="@style/Study.TextAppearance.CardLargeValue"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/card_title" />
+
+    <TextView
+        android:id="@+id/air_level"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/study_card_inner_spacing"
+        android:textAppearance="@style/Study.TextAppearance.CardValue"
+        app:layout_constraintBaseline_toBaselineOf="@id/air_value"
+        app:layout_constraintStart_toEndOf="@id/air_value" />
+
+    <dev.local.weatherstudy.app.detail.view.StudyAirQualityBar
+        android:id="@+id/air_bar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/study_air_bar_height"
+        android:layout_marginTop="@dimen/study_card_inner_spacing"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/air_value" />
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/air_pollutant_list"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/study_card_inner_spacing"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:orientation="vertical"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/air_bar" />
+
+</dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

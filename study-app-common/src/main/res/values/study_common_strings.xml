@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Educational reconstruction. Neutral placeholders; Samsung's strings are not reproduced. -->
+<resources>
+    <string name="study_use_current_location">Use current location</string>
+    <string name="study_use_precise_location">Switch to precise location</string>
+    <string name="study_label_home">Home</string>
+    <string name="study_label_work">Work</string>
+    <string name="study_label_school">School</string>
+    <string name="study_label_custom">Custom</string>
+    <string name="study_action_back">Back</string>
+    <string name="study_eula_agree">Agree</string>
+    <string name="study_eula_decline">Decline</string>
+    <string name="study_eula_agreed">You have agreed to these terms.</string>
+    <string name="study_eula_screen_title">Terms</string>
+    <string name="study_locations_footer">Weather data by Open-Meteo.com</string>
+    <string name="study_location_current">Current location</string>
+</resources>

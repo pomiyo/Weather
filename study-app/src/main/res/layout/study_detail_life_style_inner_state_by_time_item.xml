@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_life_style_inner_state_by_time_item.xml
+  One time slot in a LifeStyle row that expands into a per-hour strip.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="wrap_content"
+    android:layout_width="@dimen/study_by_time_width"
+    android:orientation="vertical">
+
+    <dev.local.weatherstudy.app.detail.view.StudyLifeStyleBandView
+        android:id="@+id/by_time_band"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/study_life_style_band_height" />
+
+    <TextView
+        android:id="@+id/by_time_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+</LinearLayout>

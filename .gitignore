@@ -1,0 +1,10 @@
+
+# credentials — never commit
+local.properties
+!local.properties.example
+
+# build output
+build/
+.gradle/
+.kotlin/
+.idea/

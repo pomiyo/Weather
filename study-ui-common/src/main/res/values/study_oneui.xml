@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction: a One UI-like visual language, written from scratch.
+
+  What is borrowed is the idiom, not any asset: a large screen title in a tall header,
+  content grouped into rounded "cards" that float on the background, rows separated by
+  hairlines inside a card, summaries in an accent colour, and pill-shaped buttons.
+  The original gets all of this from the unpublished SESL AndroidX forks.
+-->
+<resources>
+    <color name="study_oneui_card">#24FFFFFF</color>
+    <color name="study_oneui_card_pressed">#3DFFFFFF</color>
+    <color name="study_oneui_divider">#1FFFFFFF</color>
+    <color name="study_oneui_text_primary">#FFFFFFFF</color>
+    <color name="study_oneui_text_secondary">#B8FFFFFF</color>
+    <color name="study_oneui_accent">#FF9CC2FF</color>
+    <color name="study_oneui_dialog">#FF252A31</color>
+
+    <dimen name="study_oneui_card_radius">26dp</dimen>
+    <dimen name="study_oneui_screen_margin">12dp</dimen>
+    <dimen name="study_oneui_row_padding_horizontal">24dp</dimen>
+    <dimen name="study_oneui_row_padding_vertical">16dp</dimen>
+
+    <style name="Study.OneUi" parent="" />
+
+    <style name="Study.OneUi.ScreenTitle" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">34sp</item>
+        <item name="android:textColor">@color/study_oneui_text_primary</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="Study.OneUi.RowTitle" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">17sp</item>
+        <item name="android:textColor">@color/study_oneui_text_primary</item>
+    </style>
+
+    <style name="Study.OneUi.RowSummary" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/study_oneui_accent</item>
+    </style>
+
+    <style name="Study.OneUi.Caption" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/study_oneui_text_secondary</item>
+    </style>
+
+    <style name="Study.OneUi.Body" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/study_oneui_text_primary</item>
+    </style>
+
+    <style name="Study.OneUi.Headline" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">24sp</item>
+        <item name="android:textColor">@color/study_oneui_text_primary</item>
+    </style>
+
+    <!-- dialogs: a rounded dark sheet with inset margins, anchored low on the screen -->
+    <style name="Study.OneUi.Dialog" parent="Theme.AppCompat.Dialog.Alert">
+        <item name="android:windowBackground">@drawable/study_oneui_dialog_background</item>
+        <item name="colorAccent">@color/study_oneui_accent</item>
+        <item name="android:windowMinWidthMajor">92%</item>
+        <item name="android:windowMinWidthMinor">92%</item>
+    </style>
+</resources>

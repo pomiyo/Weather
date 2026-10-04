@@ -1,0 +1,11 @@
+# Copy to local.properties and fill in. Never commit local.properties.
+#
+# Google Maps Platform key for the map-search and radar surfaces.
+# Restrict it in the Google Cloud console to:
+#   Application restriction : Android apps
+#   Package name            : dev.local.weatherstudy
+#   SHA-1 fingerprint       : from `./gradlew signingReport`
+STUDY_MAPS_API_KEY=YOUR_KEY_HERE
+
+# Android SDK location (Android Studio writes this for you)
+#sdk.dir=/Users/<you>/Library/Android/sdk

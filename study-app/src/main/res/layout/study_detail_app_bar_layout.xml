@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_app_bar_layout.
+
+  The collapsing header: one page per saved city in a ViewPager2, with the toolbar pinned
+  over it. The whole block scrolls away except for the toolbar's own height - see
+  StudyDetailAppBarOffsetChangedListener, which counter-translates the toolbar so it stays
+  put while its parent slides up, and fades the page content by collapse progress.
+-->
+<com.google.android.material.appbar.AppBarLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/app_bar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    app:elevation="0dp">
+
+    <dev.local.weatherstudy.app.detail.view.StudyCollapsibleToolbar
+        android:id="@+id/collapsible_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/study_header_expanded_height"
+        app:layout_scrollFlags="scroll|exitUntilCollapsed|snap">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/header_pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/header_page_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="4dp"
+            android:letterSpacing="0.3"
+            android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+        <include layout="@layout/study_detail_app_toolbar_layout" />
+    </dev.local.weatherstudy.app.detail.view.StudyCollapsibleToolbar>
+</com.google.android.material.appbar.AppBarLayout>

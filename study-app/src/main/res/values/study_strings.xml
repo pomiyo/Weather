@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Educational reconstruction. The original's 780 default strings across 135 locale
+     directories are Samsung's and are not reproduced; these are neutral placeholders. -->
+<resources>
+    <string name="study_app_name">Weather Study</string>
+
+    <string name="study_action_locations">Manage locations</string>
+    <string name="study_action_settings">Settings</string>
+    <string name="study_action_search">Search</string>
+    <string name="study_action_refresh">Refresh</string>
+
+    <string name="study_card_hourly">Hourly forecast</string>
+    <string name="study_card_daily">Daily forecast</string>
+    <string name="study_card_precipitation">Precipitation</string>
+    <string name="study_card_index">Details</string>
+    <string name="study_card_bottom_index">Sun and moon</string>
+    <string name="study_card_air_index">Air quality</string>
+    <string name="study_card_sun">Sunrise and sunset</string>
+    <string name="study_card_moon">Moon phase</string>
+    <string name="study_card_sun_and_moon">Sun and moon</string>
+    <string name="study_card_alert">Weather alerts</string>
+    <string name="study_card_insight">Insights</string>
+    <string name="study_card_life_style">Activities</string>
+    <string name="study_card_life_tips">Tips</string>
+    <string name="study_card_radar">Radar</string>
+    <string name="study_card_smart_things">Connected devices</string>
+    <string name="study_card_news">News</string>
+    <string name="study_card_video">Videos</string>
+    <string name="study_card_today_stories">Today\'s stories</string>
+    <string name="study_card_indicator">Data source</string>
+
+    <string name="study_index_uv">UV index</string>
+    <string name="study_index_humidity">Humidity</string>
+    <string name="study_index_pressure">Pressure</string>
+    <string name="study_index_wind">Wind</string>
+    <string name="study_index_visibility">Visibility</string>
+    <string name="study_index_dew_point">Dew point</string>
+    <string name="study_index_precipitation">Precipitation</string>
+
+    <string name="study_life_style_setting">Choose activities</string>
+
+    <!-- stub labels: these name a dependency the reconstruction cannot satisfy -->
+    <string name="study_stub_map">Map stub — the original embeds the Google Maps SDK with a key
+        this project keeps redacted</string>
+    <string name="study_stub_smart_things">SmartThings stub — needs the SmartThings platform app</string>
+    <string name="study_stub_news">News stub — needs the Samsung News app</string>
+
+    <string name="study_empty_no_locations">No saved locations</string>
+    <string name="study_empty_add_location">Add a location to see the forecast</string>
+    <string name="study_refresh_failed">Couldn\'t refresh</string>
+    <string name="study_refresh_no_network">No network connection</string>
+    <string name="study_radar_content_description">Precipitation radar</string>
+    <string name="study_radar_play_content_description">Play radar animation</string>
+    <string name="study_radar_attribution_osm">Map data attribution placeholder</string>
+    <string name="study_radar_attribution_mapbox">Map rendering attribution placeholder</string>
+    <string name="study_header_current_location">Current location</string>
+    <string name="study_updated_at">Updated %1$s</string>
+    <string name="study_feels_like">Feels like %1$s</string>
+    <string name="study_loading">Loading the forecast…</string>
+    <string name="study_empty_action_add">Add a location</string>
+    <string name="study_refresh_done">Forecast updated</string>
+    <string name="study_data_source">Weather data by %1$s</string>
+    <string name="study_sunrise">Sunrise %1$s</string>
+    <string name="study_sunset">Sunset %1$s</string>
+    <string name="study_moonrise">Moonrise %1$s</string>
+    <string name="study_moonset">Moonset %1$s</string>
+    <string name="study_moon_illumination">%1$d%% illuminated</string>
+    <string name="study_polar_day">The sun does not set today</string>
+    <string name="study_polar_night">The sun does not rise today</string>
+
+    <string name="study_permission_title">Use your location?</string>
+    <string name="study_permission_body">Allow location access to see the forecast where you are. You can also skip this and search for a city instead.</string>
+    <string name="study_permission_granted_title">Location access is on</string>
+    <string name="study_permission_granted_body">The forecast follows your current location. You can change this at any time in the system settings.</string>
+    <string name="study_permission_allow">Allow location access</string>
+    <string name="study_permission_search">Search for a city</string>
+    <string name="study_permission_open_settings">Open system settings</string>
+    <string name="study_permission_screen_title">Permissions</string>
+
+    <string name="study_locating_title">Finding your location…</string>
+    <string name="study_locating_body">Getting a position and the forecast for it.</string>
+    <string name="study_locating_failed_title">Couldn\'t find your location</string>
+    <string name="study_locating_failed_body">Check that location is turned on and that you\'re connected to the internet, then try again.</string>
+    <string name="study_locating_retry">Try again</string>
+
+    <string name="study_locations_title">Locations</string>
+    <string name="study_locations_selected">%1$d selected</string>
+    <string name="study_locations_delete">Delete</string>
+    <string name="study_locations_add">Add a location</string>
+    <string name="study_locations_limit">You can save up to %1$d locations</string>
+
+    <string name="study_search_hint">Search for a city</string>
+    <string name="study_search_clear">Clear</string>
+    <string name="study_search_prompt">Type a city name to search</string>
+    <string name="study_search_no_results">No places found for \"%1$s\"</string>
+    <string name="study_search_failed">Couldn\'t search. Check your connection.</string>
+    <string name="study_search_adding">Adding %1$s…</string>
+    <string name="study_search_add_failed">Couldn\'t load the forecast for %1$s</string>
+
+    <string name="study_settings_title">Weather settings</string>
+    <string name="study_settings_unit">Temperature unit</string>
+    <string name="study_settings_unit_celsius">Celsius (°C)</string>
+    <string name="study_settings_unit_fahrenheit">Fahrenheit (°F)</string>
+    <string name="study_settings_auto_refresh">Auto refresh</string>
+    <string name="study_settings_permissions">Permissions</string>
+    <string name="study_settings_permissions_summary">Location access</string>
+    <string name="study_settings_terms">Terms and conditions</string>
+    <string name="study_settings_about">About Weather Study</string>
+    <string name="study_settings_activities">Activities</string>
+    <string name="study_settings_activities_summary">Not available with this weather source</string>
+    <string name="study_settings_about_summary">Version, data source, licences</string>
+
+    <string name="study_about_title">About</string>
+    <string name="study_about_version">Version %1$s</string>
+    <string name="study_about_body">An educational, clean-room reconstruction of a weather app\'s architecture. It contains no Samsung code, artwork or strings, and it talks to no Samsung service.\n\nWeather data is provided by Open-Meteo.com under the CC BY 4.0 licence, through an in-process gateway that serves the project\'s own data shapes.</string>
+    <string name="study_about_licences">Open source licences</string>
+    <string name="study_licences_title">Open source licences</string>
+    <string name="study_licences_body">Weather and geocoding data\nOpen-Meteo.com — CC BY 4.0. Geocoding data from GeoNames — CC BY 4.0.\n\nToolbar glyphs\nMaterial Symbols — Apache License 2.0.\n\nLibraries\nAndroidX (core, appcompat, fragment, recyclerview, viewpager2, constraintlayout, coordinatorlayout, swiperefreshlayout, navigation, lifecycle, room, work, datastore, startup, glance) — Apache License 2.0\nMaterial Components for Android — Apache License 2.0\nKotlin and kotlinx.coroutines — Apache License 2.0\nDagger and Hilt — Apache License 2.0\nRetrofit, OkHttp and Moshi — Apache License 2.0\nOrbit MVI — Apache License 2.0\nCoil — Apache License 2.0\nGoogle Play services location — Android Software Development Kit License\n\nThe weather icons and all other drawings in this app are original to this project.</string>
+    <string name="study_activities_title">Activities</string>
+    <string name="study_activities_body">Activity forecasts (running, golf, driving and the like) are a capability of specific weather providers. The provider in use does not supply them, so there is nothing to choose here.</string>
+</resources>

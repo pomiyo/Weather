@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction: the launcher icon's foreground layer, an original drawing.
+  A sun behind a cloud, kept inside the 66dp safe zone of the 108dp adaptive canvas.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFD54F"
+        android:pathData="M64,42m-13,0a13,13 0,1 0,26 0a13,13 0,1 0,-26 0" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M43,74h27c7.2,0 13,-5.8 13,-13c0,-6.9 -5.4,-12.5 -12.2,-13C69,40.5 62.3,35 54.5,35c-6.6,0 -12.3,3.9 -15,9.6C32.4,45.4 27,51.400 27,58.700C27,67.200 34.200,74 43,74z" />
+</vector>

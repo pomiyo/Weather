@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of the detail screen's root.
+
+  Structure recovered from reports/architecture.md §10:
+    CoordinatorLayout
+      ├── AppBarLayout  (collapsing header, one page per city)
+      ├── StudyDetailSwipeRefresh
+      │     └── RecyclerView (StaggeredGridLayoutManager) - the 20 card types
+      ├── the bottom floating bar
+      └── the loading / empty overlay
+-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/detail_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <include layout="@layout/study_detail_app_bar_layout" />
+
+    <dev.local.weatherstudy.app.detail.view.StudyDetailSwipeRefresh
+        android:id="@+id/swipe_refresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/card_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:paddingHorizontal="7dp"
+            android:paddingBottom="@dimen/study_detail_list_bottom_padding" />
+    </dev.local.weatherstudy.app.detail.view.StudyDetailSwipeRefresh>
+
+    <include
+        android:id="@+id/bottom_floating_area"
+        layout="@layout/study_detail_bottom_floating_area_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_margin="@dimen/study_card_margin"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/detail_message_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="32dp"
+        android:visibility="gone">
+
+        <ProgressBar
+            android:id="@+id/detail_progress"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:indeterminateTint="#FFFFFFFF" />
+
+        <TextView
+            android:id="@+id/detail_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:textAppearance="@style/Study.TextAppearance.CardValue" />
+
+        <Button
+            android:id="@+id/detail_message_action"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/study_button_primary_background"
+            android:paddingHorizontal="24dp"
+            android:textAllCaps="false"
+            android:textColor="#FF1C313A"
+            android:visibility="gone" />
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

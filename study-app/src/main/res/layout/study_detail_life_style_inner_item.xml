@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_life_style_inner_item.xml
+  One activity row. bandCount is decoded from stateType - see StudyLifeStyleStateType.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="@dimen/study_daily_row_padding">
+
+    <ImageView
+        android:id="@+id/life_style_icon"
+        android:layout_width="@dimen/study_life_style_icon"
+        android:layout_height="@dimen/study_life_style_icon"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/study_card_inner_spacing"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/life_style_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/Study.TextAppearance.CardValue" />
+
+        <TextView
+            android:id="@+id/life_style_state"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+    </LinearLayout>
+
+    <dev.local.weatherstudy.app.detail.view.StudyLifeStyleBandView
+        android:id="@+id/life_style_bands"
+        android:layout_width="@dimen/study_life_style_band_width"
+        android:layout_height="@dimen/study_life_style_band_height"
+        android:layout_gravity="center_vertical" />
+
+</LinearLayout>

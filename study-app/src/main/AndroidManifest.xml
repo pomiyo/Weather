@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction.
+
+  The original declares this same meta-data with a LITERAL key value inline. Here the value
+  comes from a Gradle manifest placeholder fed by local.properties, so nothing is committed.
+  An empty placeholder is valid: the Maps SDK simply fails to authenticate, and
+  StudyWeatherPolicy.supportRadar()/supportMapSearch() keep the map surfaces hidden.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${studyMapsApiKey}" />
+    </application>
+</manifest>

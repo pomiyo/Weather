@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_radar_view_holder.xml.
+
+  The view hierarchy mirrors the original one-for-one, including the attribution row.
+  Two findings from reports/maps-credential-analysis.md drive its shape:
+
+  1. The original's radar surface is a CoilImageView, not a map widget. The radar is a
+     PRE-RENDERED RASTER fetched over HTTP, so no Maps SDK is involved in this card at
+     all — the SDK key path only serves map search.
+  2. Those tiles are Mapbox-rendered over OpenStreetMap data, which is why the original
+     bundles both logos here. The attribution row is a licensing requirement for whoever
+     displays the imagery, not decoration, so collapsing it away would misrepresent the
+     original's obligations. Logo assets are NOT copied; the two ImageViews are stubbed.
+
+  The image URL itself is supplied by the weather API response, with apiKey and region
+  appended client-side — see TwcRadarConverter in the report. This project issues no such
+  request: @id/radar_view stays empty and the stub label shows instead.
+-->
+<dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/study_card_margin"
+    android:background="@drawable/study_card_background"
+    android:padding="@dimen/study_card_padding">
+
+    <LinearLayout
+        android:id="@+id/ll_radar_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+            android:id="@+id/card_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/study_card_radar"
+            android:textAppearance="@style/Study.TextAppearance.CardTitle" />
+    </LinearLayout>
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/radar_error_msg"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/study_card_inner_spacing"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ll_radar_title" />
+
+    <FrameLayout
+        android:id="@+id/radar_content_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/study_card_inner_spacing"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/radar_error_msg">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/radar_map_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/study_stub_background">
+
+            <ImageView
+                android:id="@+id/radar_view"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/study_radar_height"
+                android:contentDescription="@string/study_radar_content_description"
+                android:scaleType="centerCrop"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/radar_stub_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/study_stub_map"
+                android:textAppearance="@style/Study.TextAppearance.CardCaption"
+                app:layout_constraintBottom_toBottomOf="@id/radar_view"
+                app:layout_constraintEnd_toEndOf="@id/radar_view"
+                app:layout_constraintStart_toStartOf="@id/radar_view"
+                app:layout_constraintTop_toTopOf="@id/radar_view" />
+
+            <ImageView
+                android:id="@+id/radar_play_btn"
+                android:layout_width="@dimen/study_radar_play_button_size"
+                android:layout_height="@dimen/study_radar_play_button_size"
+                android:contentDescription="@string/study_radar_play_content_description"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/radar_view"
+                app:layout_constraintEnd_toEndOf="@id/radar_view"
+                app:layout_constraintStart_toStartOf="@id/radar_view"
+                app:layout_constraintTop_toTopOf="@id/radar_view" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!--
+          Attribution row. Mirrors the original's @id/radar_source LinearLayout.
+          The original places one ImageView per upstream party; this project stubs both
+          rather than copying third-party logo assets.
+        -->
+        <LinearLayout
+            android:id="@+id/radar_source"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:orientation="horizontal"
+            android:padding="@dimen/study_radar_attribution_padding">
+
+            <ImageView
+                android:id="@+id/open_street_map"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/study_radar_view_logo_height"
+                android:contentDescription="@string/study_radar_attribution_osm"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/map_box"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/study_radar_view_logo_height"
+                android:layout_marginStart="@dimen/study_radar_attribution_padding"
+                android:contentDescription="@string/study_radar_attribution_mapbox"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/tv_radar_insight"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/study_card_inner_spacing"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/radar_content_layout" />
+
+</dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of Weather.Theme.AppCompat.Weather - a
+  Theme.AppCompat.DayNight.NoActionBar descendant with the cutout mode the original sets.
+-->
+<resources>
+    <style name="Study.Theme.AppCompat.Weather" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@drawable/study_splash_gradient_default</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="colorAccent">#FFFFFFFF</item>
+        <item name="alertDialogTheme">@style/Study.OneUi.Dialog</item>
+    </style>
+</resources>

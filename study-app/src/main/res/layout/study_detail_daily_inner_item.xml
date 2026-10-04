@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_daily_inner_item.xml
+  One day. The high/low range bar uses the ratio pair computed in StudyDetailDailyItemState.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="@dimen/study_daily_row_padding">
+
+    <TextView
+        android:id="@+id/daily_day"
+        android:layout_width="@dimen/study_daily_day_width"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+    <TextView
+        android:id="@+id/daily_precipitation"
+        android:layout_width="@dimen/study_daily_precip_width"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+    <ImageView
+        android:id="@+id/daily_icon"
+        android:layout_width="@dimen/study_daily_icon_size"
+        android:layout_height="@dimen/study_daily_icon_size"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/daily_low"
+        android:layout_width="@dimen/study_daily_temp_width"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+    <dev.local.weatherstudy.app.detail.view.StudyDailyRangeBar
+        android:id="@+id/daily_range"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/study_daily_range_height"
+        android:layout_gravity="center_vertical"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/daily_high"
+        android:layout_width="@dimen/study_daily_temp_width"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.TextAppearance.CardValue" />
+
+</LinearLayout>

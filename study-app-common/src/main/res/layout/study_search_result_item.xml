@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Educational reconstruction of search_result_item: a place, and where it is. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/study_oneui_row_selectable"
+    android:minHeight="64dp"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/study_oneui_row_padding_horizontal"
+    android:paddingVertical="12dp">
+
+    <TextView
+        android:id="@+id/result_city"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.OneUi.RowTitle" />
+
+    <TextView
+        android:id="@+id/result_region"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.OneUi.Caption" />
+</LinearLayout>

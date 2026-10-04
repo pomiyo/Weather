@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_index_uv_inner_view_holder.xml
+  Index row with its Canvas graph: StudyUvGraph.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/study_card_margin"
+    android:background="@drawable/study_card_background"
+    android:minHeight="132dp"
+    android:orientation="vertical"
+    android:padding="@dimen/study_card_padding">
+
+    <TextView
+        android:id="@+id/index_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="6dp"
+        android:textAppearance="@style/Study.TextAppearance.CardTitle" />
+
+    <dev.local.weatherstudy.app.detail.view.StudyUvGraph
+        android:id="@+id/index_graph"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/study_index_graph_height" />
+
+    <TextView
+        android:id="@+id/index_value"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textColor="#FFFFFFFF"
+        android:textSize="22sp" />
+
+    <TextView
+        android:id="@+id/index_level"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+</LinearLayout>

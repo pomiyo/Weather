@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of detail_precipitation_item.xml
+  One precipitation column.
+-->
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_height="wrap_content"
+    android:layout_width="@dimen/study_precipitation_item_width"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/precipitation_amount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+    <dev.local.weatherstudy.app.detail.view.StudyPrecipitationBar
+        android:id="@+id/precipitation_bar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/study_precipitation_bar_height" />
+
+    <TextView
+        android:id="@+id/precipitation_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+
+</LinearLayout>
