@@ -88,6 +88,15 @@ class StudyDetailRenderer(
         ).also { cardList.layoutManager = it }
 
         cardList.adapter = adapter
+        // detail_gap_between_cards (10dp) between every card.
+        //
+        // There was no decoration here at all, so the top-level cards sat flush against one
+        // another: the daily card's bottom corner met the UV tile's top corner, the
+        // precipitation tile met the sun card, and the moon card met the footer. Rounded
+        // corners touching with no gap read as cards overlapping, which is exactly what it
+        // looked like. The nested lists inside the Index and daily cards already had their
+        // gaps; the outer list never did.
+        cardList.addItemDecoration(StudyCardGap(cardList.resources))
         cardList.clipChildren = false
         cardList.clipToPadding = false
         // the hourly strip draws outside its bounds; nothing in the chain may clip
@@ -398,5 +407,37 @@ class StudyDetailBottomBarToggler(
 
     private companion object {
         const val FADE_DURATION_MS = 150L
+    }
+}
+
+/**
+ * The gap between top-level detail cards.
+ *
+ * `detail_gap_between_cards` is 10dp and the original applies it between cards, not as a
+ * margin inside each card layout - which is why none of the detail_*_view_holder layouts
+ * declare one. Keeping it here means a card can be reused in a tighter context (the Index
+ * container, the sun-and-moon pair) without carrying its outer spacing with it.
+ *
+ * In two-column mode the horizontal half-gap goes on the inner edge of each column so the
+ * pair still spans the full content width.
+ */
+private class StudyCardGap(resources: android.content.res.Resources) :
+    RecyclerView.ItemDecoration() {
+
+    private val gap = resources.getDimensionPixelSize(R.dimen.study_detail_gap_between_cards)
+
+    override fun getItemOffsets(
+        outRect: android.graphics.Rect,
+        view: View,
+        parent: RecyclerView,
+        state: RecyclerView.State,
+    ) {
+        outRect.bottom = gap
+
+        val params = view.layoutParams as? StaggeredGridLayoutManager.LayoutParams ?: return
+        val spanCount = (parent.layoutManager as? StaggeredGridLayoutManager)?.spanCount ?: 1
+        if (spanCount < 2 || params.isFullSpan) return
+        // half the gutter on each inner edge
+        if (params.spanIndex == 0) outRect.right = gap / 2 else outRect.left = gap / 2
     }
 }
