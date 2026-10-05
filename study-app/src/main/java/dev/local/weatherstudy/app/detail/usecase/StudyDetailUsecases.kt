@@ -1,12 +1,19 @@
 package dev.local.weatherstudy.app.detail.usecase
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dev.local.weatherstudy.app.R
 import dev.local.weatherstudy.domain.entity.device.StudyDeviceType
 import dev.local.weatherstudy.domain.policy.StudyOrderingPolicy
 import dev.local.weatherstudy.domain.repo.StudySettingsRepo
 import dev.local.weatherstudy.system.service.StudySystemService
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailCardType
+import dev.local.weatherstudy.ui.common.detail.state.StudyDetailConfiguration
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailItemState
+import dev.local.weatherstudy.ui.common.detail.state.StudyDetailScreenType
+import dev.local.weatherstudy.ui.common.resource.StudyDensityUnitConverter
 import javax.inject.Inject
+import kotlin.math.roundToInt
 
 /**
  * Educational reconstruction.
@@ -22,56 +29,120 @@ import javax.inject.Inject
  * ### Layout decisions are use cases here, not resource qualifiers
  *
  * `GetColumnSize` is the one to notice. It returns 1 or 2, and `DetailAdapter` turns
- * that into `isFullSpan` on every card. Because it is a use case reading the live device
- * state rather than a `values-sw600dp` integer, **folding a device re-lays out the grid
- * without a configuration-change restart** — which is the whole reason it exists.
+ * that into `isFullSpan` on every card. Because it is a use case reading the live window
+ * size rather than a `values-sw600dp` integer, **folding a device re-lays out the grid
+ * without a configuration-change restart** — which is the whole reason it exists. There
+ * is no detail-screen dimension override in any `-land` or `-sw600dp` folder of the APK;
+ * the whole responsive behaviour is these two functions.
+ *
+ * ### Session 4 rewrite: the dependency ran the wrong way
+ *
+ * The previous version had `GetColumnSize` ask the device whether it was a tablet, a
+ * fold or in DeX, and `GetContentAreaWidth` then divide the screen width by the answer.
+ * The original is the exact inverse, and it never asks what the device is:
+ *
+ * ```
+ * GetContentAreaWidthImpl(configuration, screenState) = when (screenState) {
+ *     Normal          -> widthPx - 2 * detail_content_portrait_padding
+ *     NormalLandscape -> widthPx * 0.62
+ *     Large           -> widthPx * 0.86
+ *     Huge            -> detail_content_width_at_huge_screen   // 840dp, flat
+ * }
+ * GetColumnSizeImpl(...) = if (contentAreaWidth > 618dp) 2 else 1
+ * ```
+ *
+ * Width comes first and the column count falls out of it. Three consequences the old
+ * direction could not produce:
+ *
+ * 1. **A phone in landscape puts the cards in a centred column 62% of the width.** That
+ *    is the single biggest difference between the two orientations, and it cannot be
+ *    expressed as "how many columns" at all — it is one column, narrower than the screen.
+ * 2. **A tablet gets two columns only if 86% of its width clears 618dp**, so a small
+ *    tablet stays single-column. Asking `isTablet()` gave it two.
+ * 3. **Huge windows stop growing.** Past 960dp the content is pinned to 840dp and the
+ *    rest becomes margin, which no ratio applied to the screen width can do.
  *
  * This is independently written reconstruction code, not original Samsung source.
  */
 interface StudyGetColumnSize {
-    operator fun invoke(): Int
+    operator fun invoke(
+        configuration: StudyDetailConfiguration,
+        screenType: StudyDetailScreenType,
+    ): Int
 }
 
 class StudyGetColumnSizeImpl @Inject constructor(
-    private val systemService: StudySystemService,
+    @ApplicationContext private val context: Context,
+    private val getContentAreaWidth: StudyGetContentAreaWidth,
 ) : StudyGetColumnSize {
 
-    override fun invoke(): Int {
-        val device = runCatching { systemService.getDeviceService() }.getOrNull()
-        val floating = runCatching { systemService.getFloatingFeature() }.getOrNull()
-        val folded = runCatching { systemService.getFoldStateService().isFolded() }
-            .getOrDefault(false)
-
-        val isWide = when {
-            runCatching { device?.isTablet() == true }.getOrDefault(false) -> true
-            runCatching { floating?.isFoldDevice() == true && !folded }.getOrDefault(false) -> true
-            runCatching {
-                systemService.getDesktopService().isDesktopMode(systemService.getFloatingFeature())
-            }.getOrDefault(false) -> true
-            else -> false
+    override fun invoke(
+        configuration: StudyDetailConfiguration,
+        screenType: StudyDetailScreenType,
+    ): Int =
+        if (getContentAreaWidth(configuration, screenType) >
+            StudyDensityUnitConverter.dpToPx(TWO_COLUMN_FROM_DP, context)
+        ) {
+            COLUMNS_WIDE
+        } else {
+            COLUMNS_NARROW
         }
-        return if (isWide) COLUMNS_WIDE else COLUMNS_NARROW
-    }
 
     private companion object {
+        /**
+         * The whole two-column decision, as a literal in `GetColumnSizeImpl`. Not a
+         * dimension resource, not a `sw` qualifier: a float compared against the measured
+         * content width.
+         */
+        const val TWO_COLUMN_FROM_DP = 618.0f
         const val COLUMNS_NARROW = 1
         const val COLUMNS_WIDE = 2
     }
 }
 
-/** `GetContentAreaWidth(+Impl)`. */
+/**
+ * `GetContentAreaWidth(+Impl)` — the width, in pixels, that the cards are allowed to use.
+ *
+ * Everything else about the horizontal layout follows from it: the renderer pads the card
+ * list, the app bar and the illustration by `(screenWidth - contentAreaWidth) / 2`, so a
+ * narrower content area is what centres the column.
+ */
 interface StudyGetContentAreaWidth {
-    operator fun invoke(): Int
+    operator fun invoke(
+        configuration: StudyDetailConfiguration,
+        screenType: StudyDetailScreenType,
+    ): Int
 }
 
 class StudyGetContentAreaWidthImpl @Inject constructor(
-    private val systemService: StudySystemService,
-    private val getColumnSize: StudyGetColumnSize,
+    @ApplicationContext private val context: Context,
 ) : StudyGetContentAreaWidth {
-    override fun invoke(): Int {
-        val screenWidth = runCatching { systemService.getWindowService().getScreenWidth() }
-            .getOrDefault(0)
-        return if (screenWidth <= 0) 0 else screenWidth / getColumnSize()
+
+    override fun invoke(
+        configuration: StudyDetailConfiguration,
+        screenType: StudyDetailScreenType,
+    ): Int {
+        val screenWidthPx =
+            StudyDensityUnitConverter.dpToPx(configuration.screenWidthDp.toFloat(), context)
+        return when (screenType) {
+            StudyDetailScreenType.NORMAL ->
+                screenWidthPx - 2 * context.resources
+                    .getDimensionPixelSize(R.dimen.study_detail_content_portrait_padding)
+            StudyDetailScreenType.NORMAL_LANDSCAPE ->
+                (screenWidthPx * PHONE_LANDSCAPE_RATIO).roundToInt()
+            StudyDetailScreenType.LARGE ->
+                (screenWidthPx * LARGE_SCREEN_RATIO).roundToInt()
+            StudyDetailScreenType.HUGE ->
+                context.resources
+                    .getDimensionPixelSize(R.dimen.study_detail_content_width_at_huge_screen)
+        }
+    }
+
+    private companion object {
+        /** `phoneLandscapeRatio` — a phone on its side gives 38% of the width back as margin */
+        const val PHONE_LANDSCAPE_RATIO = 0.62f
+        /** `largeScreenRatio` */
+        const val LARGE_SCREEN_RATIO = 0.86f
     }
 }
 
@@ -207,18 +278,40 @@ class StudyGetCardOrderImpl @Inject constructor() : StudyGetCardOrder {
     }
 }
 
-/** `GetSpanType`. */
+/**
+ * `GetSpanType`.
+ *
+ * Session 4 rewrite. This asked `GetColumnSize` and then listed the cards it thought were
+ * wide. The original asks neither: it returns `DetailCardSpanState` from the card type,
+ * `isTablet()` and whether the precipitation card is showing, and leaves the column count
+ * to `DetailAdapter` — which is the only place that knows one column means every card is
+ * full span anyway.
+ *
+ * ```
+ * Alert                            -> FullSpan
+ * Hourly                           -> NormalSpan iff (precipitation shown && tablet)
+ * Precipitation                    -> FullSpan iff !tablet
+ * everything else                  -> NormalSpan
+ * ```
+ *
+ * The Hourly rule is the interesting one and reads backwards until you picture it: the
+ * hourly strip gives up its full width ONLY on a tablet that also has a precipitation
+ * card, because those two then sit side by side. Kept as a Boolean here rather than
+ * reintroducing a two-value sealed class for it; nothing in the reconstruction consumes
+ * the span state yet.
+ */
 class StudyGetSpanType @Inject constructor(
-    private val getColumnSize: StudyGetColumnSize,
+    private val systemService: StudySystemService,
 ) {
-    fun isFullSpan(cardType: StudyDetailCardType): Boolean = when {
-        getColumnSize() == 1 -> true
-        // in two-column mode the wide cards still span both
-        cardType == StudyDetailCardType.Hourly -> true
-        cardType == StudyDetailCardType.Alert -> true
-        cardType == StudyDetailCardType.Radar -> true
-        cardType == StudyDetailCardType.Indicator -> true
-        else -> false
+    fun isFullSpan(cardType: StudyDetailCardType, isPrecipitationShown: Boolean): Boolean {
+        val isTablet = runCatching { systemService.getDeviceService().isTablet() }
+            .getOrDefault(false)
+        return when {
+            cardType == StudyDetailCardType.Alert -> true
+            cardType == StudyDetailCardType.Hourly -> !(isPrecipitationShown && isTablet)
+            cardType == StudyDetailCardType.Precipitation -> !isTablet
+            else -> false
+        }
     }
 }
 

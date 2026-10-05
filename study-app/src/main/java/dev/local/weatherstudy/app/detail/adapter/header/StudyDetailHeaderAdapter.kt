@@ -31,12 +31,21 @@ import dev.local.weatherstudy.ui.common.resource.StudyWeatherIcons
  *
  * This is independently written reconstruction code, not original Samsung source.
  */
-class StudyDetailHeaderAdapter :
-    ListAdapter<StudyDetailItemState, StudyDetailHeaderViewHolder>(DIFF) {
+class StudyDetailHeaderAdapter(
+    /**
+     * `AppUtils.isPhoneModeNLandscapeOrMultiWindow`, read through the state.
+     *
+     * A lambda rather than a constructor value because it changes without the list
+     * changing: rotating the phone leaves every page's weather identical and alters only
+     * how the page is drawn. The renderer flips it and rebinds.
+     */
+    private val isSmallImageArea: () -> Boolean = { false },
+) : ListAdapter<StudyDetailItemState, StudyDetailHeaderViewHolder>(DIFF) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
         StudyDetailHeaderViewHolder(
             LayoutInflater.from(parent.context).inflate(R.layout.study_detail_header_page, parent, false),
+            isSmallImageArea,
         )
 
     override fun onBindViewHolder(holder: StudyDetailHeaderViewHolder, position: Int) =
@@ -52,7 +61,10 @@ class StudyDetailHeaderAdapter :
 }
 
 /** Corresponds conceptually to `…detail.adapter.DetailTopInfoViewHolder`. */
-class StudyDetailHeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+class StudyDetailHeaderViewHolder(
+    itemView: View,
+    private val isSmallImageArea: () -> Boolean = { false },
+) : RecyclerView.ViewHolder(itemView) {
     // city and pin are the toolbar's, not this page's - see study_detail_header_page.xml
     private val icon: LottieAnimationView = itemView.findViewById(R.id.header_icon)
     private val temperature: TextView = itemView.findViewById(R.id.header_temperature)
@@ -75,12 +87,36 @@ class StudyDetailHeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(item
     private val motion: MotionLayout? = itemView as? MotionLayout
 
     fun setCollapseProgress(progress: Float) {
-        motion?.progress = progress.coerceIn(0f, 1f)
+        // In a small image area the header does not collapse at all - it IS the collapsed
+        // arrangement, at a fixed detail_top_info_small_collapse_height - so the scroll
+        // offset has nothing to drive. See StudyDetailRenderer.applyWindowGeometry.
+        motion?.progress = if (isSmallImageArea()) 1f else progress.coerceIn(0f, 1f)
     }
 
+    /**
+     * A page in a small image area is the END ConstraintSet, permanently.
+     *
+     * `PagerViewHolder.updateAppBarLayoutAndScrollFlag` pins the app bar to
+     * `detail_top_info_small_collapse_height` and shows `weather_expand_icon` whenever the
+     * state is `AnimationIconOnly`, and `renderAppBar` swaps the temperature to
+     * `SecNum_400_White_50dp` in the same breath. The arrangement that leaves - 70dp icon
+     * at the end, high/low above feels-like beside a smaller temperature, no condition
+     * line - is exactly this scene's collapsed set, which is why there is no third layout
+     * for landscape anywhere in the APK.
+     */
     fun bind(item: StudyDetailItemState) {
         val top = item.topInfo
-        bindIcon(top.iconNum, item.background.illustrationAsset)
+        val smallImageArea = isSmallImageArea()
+        temperature.setTextAppearance(
+            if (smallImageArea) {
+                R.style.Study_TextAppearance_Detail_SecNum_400_White_50dp
+            } else {
+                R.style.Study_TextAppearance_Detail_SecNum_400_White_70dp
+            },
+        )
+        motion?.progress = if (smallImageArea) 1f else motion?.progress ?: 0f
+        // the hero illustration is not drawn in a small image area, so the icon is
+        bindIcon(top.iconNum, if (smallImageArea) "" else item.background.illustrationAsset)
         temperature.text = top.temperature
         condition.text = top.weatherText
         highLow.text = top.highLow

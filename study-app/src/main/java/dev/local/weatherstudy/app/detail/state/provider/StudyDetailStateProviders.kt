@@ -29,7 +29,6 @@ import dev.local.weatherstudy.ui.common.detail.state.StudyDetailCardState
 import dev.local.weatherstudy.app.common.resource.StudyBackgroundProvider as StudyBackgroundArtworkProvider
 import dev.local.weatherstudy.app.common.resource.StudyIllustrationProvider
 import dev.local.weatherstudy.app.detail.usecase.StudyGetCardOrder
-import dev.local.weatherstudy.app.detail.usecase.StudyGetColumnSize
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailCardType
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailConfiguration
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailDailyCardState
@@ -651,9 +650,20 @@ class StudyDetailItemStateListProvider @Inject constructor(
     private val sunProvider: StudyDetailSunCardStateProvider,
     private val moonProvider: StudyDetailMoonCardStateProvider,
     private val getCardOrder: StudyGetCardOrder,
-    private val getColumnSize: StudyGetColumnSize,
 ) {
-    operator fun invoke(weather: StudyWeather, tempScale: Int): StudyDetailItemState {
+    /**
+     * The configuration is a parameter, not an injected use case.
+     *
+     * `DetailItemStateListProvider.invoke(list, configuration, screenState, …)` takes it
+     * the same way, and it has to: the card ORDER depends on the column count (see
+     * `StudyGetCardOrderImpl`), so a rotation has to be able to rebuild this list without
+     * anything else about the weather changing.
+     */
+    operator fun invoke(
+        weather: StudyWeather,
+        tempScale: Int,
+        configuration: StudyDetailConfiguration,
+    ): StudyDetailItemState {
         val cardStates = buildMap<StudyDetailCardType, StudyDetailCardState> {
             put(StudyDetailCardType.Alert, alertProvider(weather))
             put(StudyDetailCardType.Insight, insightProvider(weather))
@@ -703,7 +713,7 @@ class StudyDetailItemStateListProvider @Inject constructor(
         return itemState.copy(
             cardSortedList = getCardOrder(
                 itemState = itemState,
-                columnSize = getColumnSize(),
+                columnSize = configuration.contentColumnSize,
             ),
         )
     }
@@ -723,7 +733,7 @@ class StudyDetailStateProvider @Inject constructor(
         selectedKey: String,
         configuration: StudyDetailConfiguration,
     ): StudyDetailState {
-        val details = weathers.map { itemStateListProvider(it, tempScale) }
+        val details = weathers.map { itemStateListProvider(it, tempScale, configuration) }
         return StudyDetailState(
             screen = if (details.isEmpty()) StudyDetailScreenState.Empty else StudyDetailScreenState.Content,
             selectedKey = selectedKey.takeIf { key -> details.any { it.key == key } }

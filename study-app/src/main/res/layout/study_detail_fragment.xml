@@ -62,8 +62,13 @@
             android:layout_height="match_parent"
             android:clipChildren="false"
             android:clipToPadding="false"
-            android:paddingHorizontal="7dp"
             android:paddingBottom="@dimen/study_detail_list_bottom_padding" />
+        <!--
+          No horizontal padding here. It was 7dp, an invented value; the original computes
+          it as (screenWidth - contentAreaWidth) / 2 in PagerViewHolder and sets it on the
+          card list in code, which is the only way it can be 5dp in portrait and ~158dp in
+          landscape. See StudyDetailRenderer.applyWindowGeometry.
+        -->
     </dev.local.weatherstudy.app.detail.view.StudyDetailSwipeRefresh>
 
     <include

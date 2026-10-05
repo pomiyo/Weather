@@ -31,16 +31,40 @@
       in portrait, so 5dp is the padding on the CONTENT ROOT, applied in code by
       DetailMainViewSetup rather than declared in a layout.
 
-      The per-card margin on top of that is not a dimension resource at all - the original
-      applies it from an ItemDecoration - so it is measured instead: in reference-ui/home.png
-      the card edge falls at x=30px of 1080 at 450dpi (scale 2.8125), i.e. 10.67dp total.
-      5dp of root padding leaves 5.67dp of card margin, rounded to 5.5dp here.
+      The per-card margin on top of that is not a dimension resource at all, and it is not
+      a margin either: `DetailItemDecoration` gives EVERY card `round(gap * 0.5f)` on both
+      sides, where gap is detail_gap_between_cards. 5dp of list padding plus that 5dp half
+      gap puts the card edge at 10dp - which is where reference-ui/home.png has it, at
+      x=30px of 1080 at 450dpi (10.67dp; the original's sw384dp ramp scales both values by
+      1.067 and this project traces the base `values/` set).
+
+      study_card_margin was the stand-in for that half gap and was declared on all eleven
+      top-level card layouts, which double-counted it against the decoration once the
+      decoration arrived. It now belongs to the bottom floating bar only.
 
       This was briefly set to 0dp while tracing the hourly card, which pushed every card
       edge-to-edge and clipped the card titles; recorded here so it is not repeated.
     -->
     <dimen name="study_detail_content_portrait_padding">5dp</dimen>
     <dimen name="study_card_margin">5.5dp</dimen>
+
+    <!--
+      Past 960dp wide the content area STOPS growing.
+
+      GetContentAreaWidthImpl returns a ratio of the screen width for every other screen
+      type and this flat 840dp for Huge, so a desktop window dragged wider only gains
+      margin. detail_content_width_at_huge_screen.
+    -->
+    <dimen name="study_detail_content_width_at_huge_screen">840dp</dimen>
+
+    <!--
+      detail_large_view_holder_gap - the gutter between the two columns on a large screen.
+
+      Subtracted from the card list's side padding there (`pad - gap / 2`), because the
+      item decoration already adds half a gutter to the outer edge of each column. Without
+      that the pair measures wider than the content area it is supposed to fill.
+    -->
+    <dimen name="study_detail_large_view_holder_gap">10dp</dimen>
 
     <!--
       Uniform inner padding for the cards that have not yet been migrated to per-card

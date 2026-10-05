@@ -29,6 +29,28 @@ open class StudySizeLimitedTextView @JvmOverloads constructor(
     private var maxTextSizePx: Float = textSize
     private var minTextSizePx: Float = DEFAULT_MIN_SP * resources.displayMetrics.scaledDensity
 
+    /** set while [shrinkToFit] is writing, so its own result is not taken as a new ceiling */
+    private var isShrinking = false
+
+    /**
+     * The ceiling has to follow the text appearance, not just the inflated attributes.
+     *
+     * [maxTextSizePx] was captured once at construction, and [shrinkToFit] then grew the
+     * text back up to it on the next measure - so a text size set at runtime lasted until
+     * the view was measured and no longer. The detail header does exactly that: it swaps
+     * the temperature between the 70dp and 50dp appearances when the window becomes a
+     * small image area, and the 50dp never survived to the screen.
+     */
+    override fun setTextAppearance(resId: Int) {
+        super.setTextAppearance(resId)
+        maxTextSizePx = textSize
+    }
+
+    override fun setTextSize(unit: Int, size: Float) {
+        super.setTextSize(unit, size)
+        if (!isShrinking) maxTextSizePx = textSize
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val availableWidth = MeasureSpec.getSize(widthMeasureSpec) - paddingLeft - paddingRight
         if (availableWidth > 0 && text.isNotEmpty()) shrinkToFit(availableWidth)
@@ -49,7 +71,9 @@ open class StudySizeLimitedTextView @JvmOverloads constructor(
                 high = mid
             }
         }
+        isShrinking = true
         setTextSize(TypedValue.COMPLEX_UNIT_PX, best)
+        isShrinking = false
     }
 
     private companion object {

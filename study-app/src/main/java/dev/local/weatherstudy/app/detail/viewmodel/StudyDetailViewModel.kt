@@ -5,8 +5,6 @@ import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.local.weatherstudy.app.detail.state.provider.StudyDetailStateProvider
 import dev.local.weatherstudy.app.detail.usecase.StudyGetCardOrder
-import dev.local.weatherstudy.app.detail.usecase.StudyGetColumnSize
-import dev.local.weatherstudy.app.detail.usecase.StudyGetContentAreaWidth
 import dev.local.weatherstudy.domain.policy.StudyWeatherPolicyManager
 import dev.local.weatherstudy.domain.repo.StudyLifeStyleSettingsRepo
 import dev.local.weatherstudy.domain.repo.StudySettingsRepo
@@ -94,8 +92,6 @@ class StudyDetailViewModel @Inject constructor(
     private val observeRefreshStatus: StudyObserveRefreshStatus,
     private val getUserSavedLocationCount: StudyGetUserSavedLocationCount,
     private val getCardOrder: StudyGetCardOrder,
-    private val getColumnSize: StudyGetColumnSize,
-    private val getContentAreaWidth: StudyGetContentAreaWidth,
     private val policyManager: StudyWeatherPolicyManager,
     private val devOpts: StudyDevOpts,
     private val startForegroundRefresh: StudyStartForegroundRefresh,
@@ -120,10 +116,19 @@ class StudyDetailViewModel @Inject constructor(
             observeLifeStyleSettings()
         }
 
-    /** the pager's column count comes from a use case, not a resource qualifier */
-    val contentColumnSize: Int get() = getColumnSize()
+    /**
+     * `DetailViewModel.getContentColumnSize()` / `getContentWidthPx()`.
+     *
+     * Both are computed from the configuration currently in state rather than cached, so
+     * a view that reads them during a layout pass gets the live answer. The copies held
+     * on [StudyDetailConfiguration] are the same two numbers, kept there for the adapter
+     * and the item-state providers, which only see the state.
+     */
+    val contentColumnSize: Int
+        get() = container.stateFlow.value.configuration.contentColumnSize
 
-    val contentWidthPx: Int get() = getContentAreaWidth()
+    val contentWidthPx: Int
+        get() = container.stateFlow.value.configuration.contentWidthPx
 
     val isRtl: Boolean get() = localeService.isRtl()
 
@@ -183,8 +188,19 @@ class StudyDetailViewModel @Inject constructor(
             StudyDetailAction.GoToSmartThings ->
                 postSideEffect(StudyDetailSideEffect.LaunchSmartThings)
 
-            is StudyDetailAction.ConfigurationChanged ->
-                reduce { state.copy(configuration = action.configuration) }
+            is StudyDetailAction.ConfigurationChanged -> {
+                // `DetailFragment.setConfiguration` re-runs GetCardOrder for every page
+                // when the configuration actually changed, because the column count
+                // reorders the middle of the list - Insight, Index, Daily, LifeStyle in
+                // two columns against Insight, Daily, LifeStyle, Index in one. Rotating
+                // without this leaves the one-column order laid out in two columns.
+                if (state.configuration == action.configuration) return@intent
+                val columnSize = action.configuration.contentColumnSize
+                val reordered = state.details.map { item ->
+                    item.copy(cardSortedList = getCardOrder(itemState = item, columnSize = columnSize))
+                }
+                reduce { state.copy(configuration = action.configuration, details = reordered) }
+            }
         }
     }
 
@@ -206,9 +222,12 @@ class StudyDetailViewModel @Inject constructor(
         combine(observeWeatherChange(), settingsRepo.observeTempScale()) { weathers, tempScale ->
             weathers to tempScale
         }.collectLatest { (weathers, tempScale) ->
-            val configuration = StudyDetailConfiguration(
-                contentColumnSize = getColumnSize(),
-                contentWidthPx = getContentAreaWidth(),
+            // The configuration is whatever the Fragment last measured - the window's
+            // own size, which no amount of weather can change. Rebuilding it here from
+            // the device services (which is what this did) threw away the orientation the
+            // Fragment had just reported and silently put the screen back into portrait
+            // geometry on the next refresh.
+            val configuration = state.configuration.copy(
                 isRtl = localeService.isRtl(),
                 isDesktopMode = runCatching {
                     systemService.getDesktopService()

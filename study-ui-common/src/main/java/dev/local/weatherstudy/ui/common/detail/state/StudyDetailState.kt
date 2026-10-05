@@ -64,8 +64,28 @@ sealed interface StudyDetailScreenState {
     data class Error(val throwable: Throwable) : StudyDetailScreenState
 }
 
-/** Corresponds conceptually to `…detail.state.DetailScreenTypeState`. */
-enum class StudyDetailScreenType { PHONE, TABLET, FOLD_MAIN, FOLD_COVER, DESKTOP }
+/**
+ * Corresponds conceptually to `…detail.state.DetailScreenTypeState`.
+ *
+ * Session 4 rewrite. This was `{ PHONE, TABLET, FOLD_MAIN, FOLD_COVER, DESKTOP }`, which
+ * is a vocabulary of DEVICES. The original's is a vocabulary of WINDOW SIZES, and it has
+ * four values, computed by `DetailScreenStateProvider` from nothing but
+ * `screenWidthDp` / `screenHeightDp`:
+ *
+ * ```
+ * widthDp >= 960 && heightDp >= 411 -> Huge
+ * widthDp >= 960 && heightDp <  411 -> NormalLandscape
+ * widthDp in 589..959 && heightDp >= 411 -> Large
+ * widthDp in 589..959 && heightDp <  411 -> NormalLandscape
+ * else                              -> Normal
+ * ```
+ *
+ * The difference matters. A tablet is not a case here; a *wide window* is, whether that
+ * comes from a tablet, an unfolded fold, DeX or a resized multi-window. Routing the
+ * decision through the window's own measurements is why the original needs no
+ * `values-sw600dp` override for the detail screen at all — there is none in the APK.
+ */
+enum class StudyDetailScreenType { NORMAL, NORMAL_LANDSCAPE, LARGE, HUGE }
 
 /**
  * Corresponds conceptually to `…detail.state.DetailRefreshState` and
@@ -94,14 +114,59 @@ sealed interface StudyDetailRefreshResult {
  * Observed responsibility: the layout decisions, all three of which come from use cases
  * rather than resources — `GetColumnSize`, `GetContentAreaWidth`, `GetSpanType`. That is
  * why a fold change re-lays out the grid without a configuration-change restart.
+ *
+ * ### The five raw fields are the original's
+ *
+ * `DetailConfiguration` is a copy of five fields of `android.content.res.Configuration`
+ * and nothing else — `screenLayout`, `screenWidthDp`, `densityDpi`, `orientation`,
+ * `smallestScreenWidthDp` — taken in `DetailFragment.setConfiguration`. It is a *value*,
+ * which is what lets the fragment compare the new one against the one in state and skip
+ * the re-order when nothing that matters changed.
+ *
+ * [screenType], [contentColumnSize] and [contentWidthPx] are DERIVED from those fields.
+ * The original derives them on demand (`DetailViewModel.getContentColumnSize()` calls
+ * `GetColumnSize(configuration, screenState)` every time it is read); they are cached
+ * here instead, computed once per configuration change, because the reconstruction's
+ * adapter and renderer read them off the state rather than off the ViewModel. Same
+ * inputs, same formulas — see `StudyGetColumnSizeImpl`.
  */
 data class StudyDetailConfiguration(
-    val screenType: StudyDetailScreenType = StudyDetailScreenType.PHONE,
+    val screenLayout: Int = 0,
+    val screenWidthDp: Int = 0,
+    val densityDpi: Int = 0,
+    val orientation: Int = 0,
+    val smallestScreenWidthDp: Int = 0,
+    /** derived — `DetailScreenState.screenTypeState` */
+    val screenType: StudyDetailScreenType = StudyDetailScreenType.NORMAL,
+    /**
+     * `AppUtils.isPhoneAndLandScape` — smallestScreenWidthDp <= 411, not multi-window,
+     * orientation landscape. Picks `detail_top_info_land_height` for the toolbar.
+     */
+    val isPhoneLandscape: Boolean = false,
+    /**
+     * `AppUtils.isPhoneModeNLandscapeOrMultiWindow`, which is what
+     * `DetailTopInfoImageTypeStateProvider` turns into
+     * `AnimationIconOnly` vs `IllustrationAndAnimationIcon`: a window too small to carry
+     * the hero illustration shows the 70dp animated icon instead, in a header that no
+     * longer expands.
+     */
+    val isSmallImageArea: Boolean = false,
+    /** derived — `GetColumnSize` */
     val contentColumnSize: Int = 1,
+    /** derived — `GetContentAreaWidth`, in pixels */
     val contentWidthPx: Int = 0,
     val isRtl: Boolean = false,
     val isDesktopMode: Boolean = false,
-)
+) {
+    /**
+     * `DetailState.isLargeScreen` — Large or Huge, nothing else. NormalLandscape is a
+     * *phone* in landscape and is explicitly not a large screen, which is why the bottom
+     * floating bar keeps its full width there while the cards do not.
+     */
+    val isLargeScreen: Boolean
+        get() = screenType == StudyDetailScreenType.LARGE ||
+            screenType == StudyDetailScreenType.HUGE
+}
 
 /**
  * Corresponds conceptually to `…detail.state.DetailTopInfoState`,

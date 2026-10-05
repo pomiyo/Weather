@@ -68,12 +68,30 @@
         <!--
           The single Activity for the whole phone UI. singleTop + exported, as in the
           original, so every external entry point reuses one instance.
+
+          The four attributes below are the original MainActivity's and all four matter:
+
+            * resizeableActivity + screenOrientation="user" let the window be rotated and
+              resized at all - without them the detail screen never sees a landscape or
+              split-screen configuration to respond to;
+            * NO android:configChanges, deliberately. The original does not declare one
+              either, so a rotation RECREATES the activity and the new instance measures
+              itself in onViewCreated. DetailFragment.onConfigurationChanged exists for
+              the changes that arrive without a recreation - unfolding, multi-window
+              resize - which is the case GetColumnSize is designed around;
+            * largeHeap, for the Lottie compositions and the 900x900 backgrounds;
+            * adjustNothing, so the search field's keyboard never resizes the header.
         -->
         <activity
             android:name="dev.local.weatherstudy.app.StudyMainActivity"
             android:exported="true"
+            android:hardwareAccelerated="true"
+            android:largeHeap="true"
             android:launchMode="singleTop"
-            android:theme="@style/Study.Theme.AppCompat.Weather" />
+            android:resizeableActivity="true"
+            android:screenOrientation="user"
+            android:theme="@style/Study.Theme.AppCompat.Weather"
+            android:windowSoftInputMode="adjustNothing" />
 
         <!--
           Corresponds to AppLauncherActivity, which the original declares DISABLED.
