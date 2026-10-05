@@ -3,8 +3,10 @@ package dev.local.weatherstudy.app.detail.state.provider
 import dev.local.weatherstudy.domain.entity.weather.StudyAlert
 import dev.local.weatherstudy.domain.entity.weather.StudyCondition
 import dev.local.weatherstudy.domain.entity.weather.StudyForecastTime
+import dev.local.weatherstudy.domain.entity.weather.StudyHourlyObservation
 import dev.local.weatherstudy.domain.entity.weather.StudyIndex
 import dev.local.weatherstudy.domain.entity.weather.StudyWeather
+import dev.local.weatherstudy.domain.entity.forecast.StudyForecastProvider
 import dev.local.weatherstudy.domain.entity.weather.displayName
 import dev.local.weatherstudy.domain.entity.weather.isCurrentLocation
 import dev.local.weatherstudy.domain.policy.StudyOrderingPolicy
@@ -35,6 +37,7 @@ import dev.local.weatherstudy.ui.common.detail.state.StudyDetailDailyCardState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailDailyItemState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailHourlyCardState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailHourlyItemState
+import dev.local.weatherstudy.ui.common.detail.state.StudyDetailHourlyKind
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailIndexCardState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailIndexItemState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailIndicatorCardState
@@ -98,8 +101,42 @@ class StudyDetailHourlyCardStateProvider @Inject constructor(
         val hours = weather.hourlyObservations.take(HOURS_SHOWN)
         if (hours.isEmpty()) return StudyDetailHourlyCardState(isVisible = false)
 
+        // The strip is hours PLUS the day's sunrise and sunset, spliced in.
+        //
+        // `checkAndAddSunrise` / `checkAndAddSunset` run for every hour and insert an item
+        // when the event falls inside the hour that just passed:
+        //
+        //     long delta = hourEpoch - eventEpoch;
+        //     if (0 <= delta && delta < ONE_HOUR) list.add(HourlySunsetItem(...));
+        //
+        // and the inserted item's temperature is `(previousHourTemp + thisHourTemp) * 0.5f`
+        // - a value it never displays. It exists so the bezier curve has a point to pass
+        // through at that column instead of stepping over it.
+        val columns = buildList {
+            hours.forEachIndexed { index, hour ->
+                val epoch = hour.time.epochTime
+                val previousTemp = hours.getOrNull(index - 1)?.condition?.temperature
+                    ?: hour.condition.temperature
+                val mean = (previousTemp + hour.condition.temperature) / 2.0
+                weather.dailyObservations.forEach { day ->
+                    sunColumn(StudyDetailHourlyKind.SUNRISE, epoch, day.time.sunRiseTime, mean, zone)
+                        ?.let(::add)
+                    sunColumn(StudyDetailHourlyKind.SUNSET, epoch, day.time.sunSetTime, mean, zone)
+                        ?.let(::add)
+                }
+                add(
+                    StudyDetailHourlyColumn(
+                        kind = StudyDetailHourlyKind.HOUR,
+                        timeText = timeNotation.formatHour(epoch, false, zone),
+                        temperature = hour.condition.temperature,
+                        hour = hour,
+                    ),
+                )
+            }
+        }
+
         // normalise the whole series ONCE: each item view then draws only its own slice
-        val temps = hours.map { it.condition.temperature }
+        val temps = columns.map { it.temperature }
             .filter { it != StudyCondition.INVALID_TEMPERATURE }
         val min = temps.minOrNull() ?: 0.0
         val max = temps.maxOrNull() ?: 1.0
@@ -108,10 +145,10 @@ class StudyDetailHourlyCardStateProvider @Inject constructor(
             if (value == StudyCondition.INVALID_TEMPERATURE) Float.NaN
             else ((value - min) / span).toFloat()
 
-        // the tangent at each hour is decided HERE, once, from the hour's two neighbours.
+        // the tangent at each column is decided HERE, once, from its two neighbours.
         // An item view only sees three values, so if it estimated its neighbour's tangent
         // itself, two adjacent items would draw two different curves for the segment they share.
-        val ratios = hours.map { ratio(it.condition.temperature) }
+        val ratios = columns.map { ratio(it.temperature) }
         fun slopeAt(index: Int): Float {
             val current = ratios.getOrNull(index)?.takeUnless { it.isNaN() } ?: return 0f
             val before = ratios.getOrNull(index - 1)?.takeUnless { it.isNaN() }
@@ -124,26 +161,49 @@ class StudyDetailHourlyCardStateProvider @Inject constructor(
             }
         }
 
-        val items = hours.mapIndexed { index, hour ->
-            val wind = hour.condition.find(StudyIndexType.WIND)
-            val chance = hour.condition.find(StudyIndexType.PRECIPITATION_PROBABILITY)?.value ?: 0.0
+        // `supportWind` is NOT a policy question here.
+        //
+        // The original reads `forecastProviderManager.getActive().isChinaProvider()`: the
+        // hourly wind row exists for one provider and no other, which is why the device
+        // never shows it. This asked StudyWeatherPolicy.supportWind() - a different
+        // question, about the wind INDEX TILE - and so drew a wind row under every hour
+        // that the original leaves out entirely.
+        val supportsHourlyWind = StudyForecastProvider.isRegionRestrictedProvider(
+            weather.providerName,
+        )
+
+        val items = columns.mapIndexed { index, column ->
+            val hour = column.hour
+            val wind = hour?.condition?.find(StudyIndexType.WIND)
+            val chance = hour?.condition?.find(StudyIndexType.PRECIPITATION_PROBABILITY)?.value ?: 0.0
             StudyDetailHourlyItemState(
-                timeText = if (index == 0) NOW else timeNotation.formatHour(hour.time.epochTime, false, zone),
-                iconNum = hour.condition.iconNum,
-                temperatureText = temperatureNotation.format(hour.condition.temperature, tempScale),
-                temperatureRatio = ratio(hour.condition.temperature),
-                previousRatio = hours.getOrNull(index - 1)
-                    ?.let { ratio(it.condition.temperature) } ?: Float.NaN,
-                nextRatio = hours.getOrNull(index + 1)
-                    ?.let { ratio(it.condition.temperature) } ?: Float.NaN,
+                kind = column.kind,
+                timeText = column.timeText,
+                iconRes = column.iconRes,
+                iconNum = hour?.condition?.iconNum ?: 0,
+                temperatureText = when (column.kind) {
+                    StudyDetailHourlyKind.HOUR ->
+                        temperatureNotation.format(column.temperature, tempScale)
+                    else -> ""
+                },
+                temperatureRatio = ratios.getOrElse(index) { Float.NaN },
+                previousRatio = ratios.getOrNull(index - 1) ?: Float.NaN,
+                nextRatio = ratios.getOrNull(index + 1) ?: Float.NaN,
                 slope = slopeAt(index),
                 previousSlope = slopeAt(index - 1),
                 nextSlope = slopeAt(index + 1),
-                precipitationText = if (chance >= MIN_CHANCE_SHOWN) indexNotation.formatPercent(chance) else "",
-                windText = wind?.let { windNotation.formatSpeed(it.value, StudyWindNotation.UNIT_KPH) }.orEmpty(),
+                precipitationText = if (hour != null && chance >= MIN_CHANCE_SHOWN) {
+                    indexNotation.formatPercent(chance)
+                } else {
+                    ""
+                },
+                windText = if (supportsHourlyWind && wind != null) {
+                    windNotation.formatSpeed(wind.value, StudyWindNotation.UNIT_KPH)
+                } else {
+                    ""
+                },
                 windDirectionDegree = windNotation.toDegree(wind?.levelText.orEmpty()),
-                isNow = index == 0,
-                isDay = hour.time.isDayOrNight == StudyForecastTime.DAY,
+                isDay = hour?.time?.isDayOrNight != StudyForecastTime.NIGHT,
             )
         }
         return StudyDetailHourlyCardState(
@@ -154,14 +214,50 @@ class StudyDetailHourlyCardStateProvider @Inject constructor(
                 ""
             },
             items = items,
-            supportWind = policyManager.supportWind(),
+            supportWind = supportsHourlyWind,
+        )
+    }
+
+    /**
+     * One column of the strip before it becomes state: an hour, or a spliced sun event.
+     *
+     * [hour] is null for the two sun columns, which is what makes them carry no icon
+     * number, no precipitation and no wind - only a time, a word and a curve point.
+     */
+    private data class StudyDetailHourlyColumn(
+        val kind: StudyDetailHourlyKind,
+        val timeText: String,
+        val temperature: Double,
+        val hour: StudyHourlyObservation? = null,
+        val iconRes: Int = 0,
+    )
+
+    private fun sunColumn(
+        kind: StudyDetailHourlyKind,
+        hourEpoch: Long,
+        eventEpoch: Long,
+        meanTemperature: Double,
+        zone: String,
+    ): StudyDetailHourlyColumn? {
+        if (eventEpoch <= 0L) return null
+        val delta = hourEpoch - eventEpoch
+        if (delta < 0L || delta >= HOUR_MILLIS) return null
+        return StudyDetailHourlyColumn(
+            kind = kind,
+            timeText = timeNotation.formatClock(eventEpoch, zone),
+            temperature = meanTemperature,
+            iconRes = if (kind == StudyDetailHourlyKind.SUNRISE) {
+                dev.local.weatherstudy.ui.common.R.drawable.study_ic_sunrise_transparent
+            } else {
+                dev.local.weatherstudy.ui.common.R.drawable.study_ic_sunset_transparent
+            },
         )
     }
 
     private companion object {
         const val HOURS_SHOWN = 24
         const val MIN_CHANCE_SHOWN = 10.0
-        const val NOW = "Now"
+        const val HOUR_MILLIS = 60L * 60L * 1000L
     }
 }
 
@@ -246,7 +342,8 @@ class StudyDetailPrecipitationCardStateProvider @Inject constructor(
             items = hours.mapIndexed { index, hour ->
                 val amount = amounts[index]
                 StudyDetailPrecipitationItemState(
-                    timeText = if (index == 0) "Now" else timeNotation.formatHour(hour.time.epochTime, false, zone),
+                    // no "Now" column: the original labels every column with a clock time
+                    timeText = timeNotation.formatHour(hour.time.epochTime, false, zone),
                     amountText = if (amount > 0.0) "%.1f".format(amount) else "",
                     amountRatio = (amount / peak).toFloat(),
                     probabilityText = hour.condition.find(StudyIndexType.PRECIPITATION_PROBABILITY)

@@ -60,8 +60,23 @@ data class StudyDetailHourlyCardState(
  * `onDraw`. That is why each item view can draw only its own slice and still produce a
  * continuous curve.
  */
+/**
+ * Corresponds conceptually to the three `DetailHourlyItemState` subclasses:
+ * `HourlyWeatherItem`, `HourlySunriseItem`, `HourlySunsetItem`.
+ *
+ * The strip is not a list of hours. `DetailHourlyCardStateProvider` splices a sunrise and
+ * a sunset column into it wherever one falls inside an hour, so a day's strip reads
+ * `5 PM · 5:32 PM Sunset · 6 PM`. The spliced column carries no temperature of its own -
+ * it shows the word instead - but it does carry a temperature VALUE, the mean of the two
+ * hours either side, so the bezier curve passes through it rather than jumping over it.
+ */
+enum class StudyDetailHourlyKind { HOUR, SUNRISE, SUNSET }
+
 data class StudyDetailHourlyItemState(
+    val kind: StudyDetailHourlyKind = StudyDetailHourlyKind.HOUR,
     val timeText: String = "",
+    /** `R.drawable.ic_sunrise_transparent` / `ic_sunset_transparent`; 0 = use [iconNum] */
+    val iconRes: Int = 0,
     val iconNum: Int = 0,
     val temperatureText: String = "",
     val temperatureRatio: Float = 0f,
@@ -74,7 +89,6 @@ data class StudyDetailHourlyItemState(
     val precipitationText: String = "",
     val windText: String = "",
     val windDirectionDegree: Float = 0f,
-    val isNow: Boolean = false,
     val isDay: Boolean = true,
 )
 

@@ -105,10 +105,21 @@ internal class StudyGatewayForecastComposer {
 
     // ---------------------------------------------------------------- hourly
 
+    /**
+     * The strip starts at the NEXT hour, not the current one.
+     *
+     * `DetailHourlyCardStateProvider` takes `weather.hourlyObservations` whole and labels
+     * every column with a clock time - there is no "Now" item type in
+     * `DetailHourlyItemState` and no `now` string anywhere in the APK. The original's
+     * first column is always the next hour because that is where its provider's feed
+     * begins. This started at the hour CONTAINING now, which the app then labelled "Now",
+     * so the strip opened with a column that repeated the header's current temperature and
+     * every later column sat one place left of the original's.
+     */
     private fun hourlyForecast(hourly: JSONObject, now: Long): JSONArray {
         val times = hourly.getJSONArray("time")
         val start = (0 until times.length())
-            .lastOrNull { times.getLong(it) * MILLIS <= now }
+            .firstOrNull { times.getLong(it) * MILLIS > now }
             ?: 0
         val result = JSONArray()
         for (i in start until minOf(start + HOURLY_COUNT, times.length())) {

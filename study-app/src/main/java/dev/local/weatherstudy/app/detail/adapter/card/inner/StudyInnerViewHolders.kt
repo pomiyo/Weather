@@ -48,10 +48,15 @@ class StudyHourlyInnerViewHolder(
         temp.text = item.temperatureText
         precip.text = item.precipitationText
         precip.visibility = if (item.precipitationText.isEmpty()) View.GONE else View.VISIBLE
-        // getWhiteResource, not getResource: the detail cards sit on dark painted artwork
-        // whatever the system theme is doing, so the white-disc variant would show a disc
-        // against the sky. This is why the original exposes the two separately.
-        icon.setImageResource(StudyIconProvider.getWhiteResource(itemView.context, item.iconNum))
+        // A spliced sun column carries its own drawable; an hour resolves one from the
+        // icon vocabulary. getWhiteResource, not getResource: the detail cards sit on dark
+        // painted artwork whatever the system theme is doing, so the white-disc variant
+        // would show a disc against the sky.
+        if (item.iconRes != 0) {
+            icon.setImageResource(item.iconRes)
+        } else {
+            icon.setImageResource(StudyIconProvider.getWhiteResource(itemView.context, item.iconNum))
+        }
 
         // the three ratios are what make the curve continuous across item boundaries
         graph.currentRatio = item.temperatureRatio
@@ -65,8 +70,22 @@ class StudyHourlyInnerViewHolder(
 
         // The sun label overlays the temperature at sunrise/sunset rather than replacing its
         // text, so the two can carry different text appearances - see the layout's note 2.
-        sun.visibility = View.GONE
-        temp.visibility = View.VISIBLE
+        //
+        // `HourlySunriseItem` and `HourlySunsetItem` show the word where the temperature
+        // goes and keep a temperature VALUE for the curve, which is why the graph above is
+        // bound from the same fields for all three kinds.
+        val isSunEvent = item.kind != StudyDetailHourlyKind.HOUR
+        sun.visibility = if (isSunEvent) View.VISIBLE else View.GONE
+        temp.visibility = if (isSunEvent) View.INVISIBLE else View.VISIBLE
+        if (isSunEvent) {
+            sun.setText(
+                if (item.kind == StudyDetailHourlyKind.SUNRISE) {
+                    R.string.study_label_sunrise
+                } else {
+                    R.string.study_label_sunset
+                },
+            )
+        }
 
         // The whole precipitation row goes, not just its text: hiding the label alone would
         // leave the droplet glyph floating under an empty hour.
