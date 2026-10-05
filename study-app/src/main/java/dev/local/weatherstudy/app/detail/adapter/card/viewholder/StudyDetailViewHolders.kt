@@ -55,6 +55,24 @@ abstract class StudyDetailCommonViewHolder(
     /** every card layout carries the same title view; the indicator card has none */
     protected val title: android.widget.TextView? = itemView.findViewById(R.id.card_title)
 
+    init {
+        // Every card is clickable.
+        //
+        // The behaviour was already plumbed - onAction dispatches CardClicked, which the
+        // ViewModel turns into tracking plus a ScrollToCard side effect - but nothing ever
+        // called it, because no listener was attached to the card root. Only the news and
+        // radar inner items had one. That is why the screen felt inert: the cards carry
+        // selectableItemBackground as their foreground, but a View with no click listener is
+        // not clickable, so the ripple never fired either.
+        //
+        // cardType is abstract and set by the subclass, so it is read inside the lambda at
+        // click time rather than here, where it is not yet initialised.
+        //
+        // A subclass that needs its own behaviour (the content cards, the radar play button)
+        // sets its listener after this one and wins.
+        itemView.setOnClickListener { onAction(cardType) }
+    }
+
     fun render(state: StudyDetailState, item: StudyDetailItemState?) {
         lastDataStateHashcode = state.hashCode()
         lastDataSelectedLocationKey = state.selectedKey

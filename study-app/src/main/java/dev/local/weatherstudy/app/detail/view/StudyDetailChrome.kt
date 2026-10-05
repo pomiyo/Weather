@@ -1,5 +1,8 @@
 package dev.local.weatherstudy.app.detail.view
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.StateListAnimator
 import android.content.Context
 import android.graphics.BlendMode
 import android.graphics.BlendModeColorFilter
@@ -75,6 +78,41 @@ class StudyDetailCardConstraintLayout @JvmOverloads constructor(
         val outValue = TypedValue()
         context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
         foreground = ContextCompat.getDrawable(context, outValue.resourceId)
+        stateListAnimator = pressScaleAnimator()
+    }
+
+    /**
+     * The press feedback, approximating `?seslSmallTouchAnimator`.
+     *
+     * The original sets that theme attribute as `android:stateListAnimator` on 18 views
+     * across the detail layouts - it is One UI's press-scale, and it is a large part of why
+     * the real app feels responsive and a static reconstruction does not. It lives in the
+     * unpublished SESL AppCompat fork, so there is no AndroidX equivalent to point at.
+     *
+     * Reconstructed as a plain StateListAnimator: scale to [PRESSED_SCALE] over
+     * [PRESS_DURATION_MS] on press and back on release. The numbers are judged by eye
+     * against the device, not traced - the original's animator is a compiled resource in a
+     * fork this project does not have. Flagged as an approximation in
+     * reports/visual-comparison.md.
+     */
+    private fun pressScaleAnimator(): StateListAnimator {
+        fun scaleTo(value: Float, duration: Long) = AnimatorSet().apply {
+            playTogether(
+                ObjectAnimator.ofFloat(this@StudyDetailCardConstraintLayout, SCALE_X, value),
+                ObjectAnimator.ofFloat(this@StudyDetailCardConstraintLayout, SCALE_Y, value),
+            )
+            this.duration = duration
+        }
+        return StateListAnimator().apply {
+            addState(intArrayOf(android.R.attr.state_pressed), scaleTo(PRESSED_SCALE, PRESS_DURATION_MS))
+            addState(IntArray(0), scaleTo(1f, RELEASE_DURATION_MS))
+        }
+    }
+
+    private companion object {
+        const val PRESSED_SCALE = 0.97f
+        const val PRESS_DURATION_MS = 100L
+        const val RELEASE_DURATION_MS = 350L
     }
 
     /**
