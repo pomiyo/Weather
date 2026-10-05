@@ -77,9 +77,25 @@
         <item name="android:textColor">@color/study_oneui_text_primary</item>
     </style>
 
-    <!-- dialogs: a rounded dark sheet with inset margins, anchored low on the screen -->
-    <style name="Study.OneUi.Dialog" parent="Theme.AppCompat.Dialog.Alert">
+    <!--
+      Dialogs: a rounded sheet with inset margins, anchored low on the screen.
+
+      The parent is DayNight, and that is the whole fix for a dialog whose text could not
+      be read. `Theme.AppCompat.Dialog.Alert` is the DARK theme - AppCompat's unqualified
+      `Theme.AppCompat.*` always is - so it carried a white `textColorPrimary` while
+      `study_oneui_dialog` painted the sheet `#fcfcff` in day mode: white on white. The
+      title and every choice were there and invisible, and in night mode the same mismatch
+      ran the other way and happened to look fine, which is why it survived three passes.
+
+      This is the same mistake pass 5 found in the app theme itself - `Theme.AppCompat`
+      where `Theme.AppCompat.DayNight` was meant - left behind in the one style that did
+      not inherit the correction. The surfaces and text colours either side of it already
+      had their `values-night` overrides; only the parent was wrong.
+    -->
+    <style name="Study.OneUi.Dialog" parent="Theme.AppCompat.DayNight.Dialog.Alert">
         <item name="android:windowBackground">@drawable/study_oneui_dialog_background</item>
+        <item name="android:textColorPrimary">@color/study_oneui_text_primary</item>
+        <item name="android:textColorSecondary">@color/study_oneui_text_secondary</item>
         <item name="colorAccent">@color/study_oneui_accent</item>
         <item name="android:windowMinWidthMajor">92%</item>
         <item name="android:windowMinWidthMinor">92%</item>
