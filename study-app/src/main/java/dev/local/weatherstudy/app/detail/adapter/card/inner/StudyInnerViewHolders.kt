@@ -278,22 +278,31 @@ class StudyDailyInnerViewHolder(itemView: View) :
     private val day: TextView = itemView.findViewById(R.id.daily_day)
     private val precip: TextView = itemView.findViewById(R.id.daily_precipitation)
     private val icon: ImageView = itemView.findViewById(R.id.daily_icon)
+    private val iconNight: ImageView = itemView.findViewById(R.id.daily_icon_night)
+    private val precipIcon: ImageView = itemView.findViewById(R.id.daily_precipitation_icon)
     private val low: TextView = itemView.findViewById(R.id.daily_low)
-    private val range: StudyDailyRangeBar = itemView.findViewById(R.id.daily_range)
     private val high: TextView = itemView.findViewById(R.id.daily_high)
+
     override fun bind(item: StudyDetailDailyItemState) {
         day.text = item.dayText
-        precip.text = item.precipitationText
-        day.alpha = 1f
-        low.text = item.lowText
         high.text = item.highText
+        low.text = item.lowText
+
+        // The droplet goes with its value: a row with no chance to report shows neither,
+        // rather than a lone glyph.
+        val hasPrecip = item.precipitationText.isNotEmpty()
+        precip.text = item.precipitationText
+        precip.visibility = if (hasPrecip) View.VISIBLE else View.INVISIBLE
+        precipIcon.visibility = if (hasPrecip) View.VISIBLE else View.INVISIBLE
+
         // getWhiteResource, not getResource: the detail cards sit on dark painted artwork
         // whatever the system theme is doing, so the white-disc variant would show a disc
         // against the sky. This is why the original exposes the two separately.
-        icon.setImageResource(StudyIconProvider.getWhiteResource(itemView.context, item.iconNum))
-        range.lowRatio = item.lowRatio
-        range.highRatio = item.highRatio
-        range.todayMarkerRatio = if (item.isToday) item.highRatio else Float.NaN
+        val context = itemView.context
+        icon.setImageResource(StudyIconProvider.getWhiteResource(context, item.iconNum))
+        iconNight.setImageResource(StudyIconProvider.getWhiteResource(context, item.nightIconNum))
+
+        // No range bar. The original ends the row with two plain numbers - see the layout.
     }
 }
 

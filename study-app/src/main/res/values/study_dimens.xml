@@ -153,6 +153,19 @@
          Not yet traced to a specific original dimen; kept at the previous reconstruction
          values so the layouts that reference them keep building. Flagged in
          reports/resource-map.md as outstanding. -->
+    <!-- ========== daily card ==========
+         The original's row has NO temperature range bar. It is
+             day | droplet + % | day icon | night icon | high low
+         with flexible 0dp Space views between the groups doing the distribution, so the
+         columns spread with the card instead of each claiming a fixed width. -->
+    <dimen name="study_detail_daily_padding_vertical">12dp</dimen>
+    <dimen name="study_detail_daily_padding_horizontal">22dp</dimen>
+    <dimen name="study_detail_daily_item_vertical_gap">18dp</dimen>
+    <dimen name="study_detail_daily_weather_icon_size">24dp</dimen>
+    <dimen name="study_detail_daily_icon_gap">12dp</dimen>
+    <dimen name="study_detail_daily_high_low_temp_text_gap">4dp</dimen>
+    <dimen name="study_detail_daily_precipitation_value_margin_start">2dp</dimen>
+
     <dimen name="study_daily_day_width">56dp</dimen>
     <dimen name="study_daily_precip_width">40dp</dimen>
     <dimen name="study_daily_icon_size">24dp</dimen>
@@ -196,6 +209,33 @@
 
     <dimen name="study_index_graph_height">45dp</dimen>
     <dimen name="study_air_bar_height">28dp</dimen>
+    <!-- ========== sun and moon ==========
+         Both cards are 190dp, the same height as a graph-bearing index tile. The arc view
+         fills its whole card (0dp on all four sides), which is why the curve runs edge to
+         edge and is clipped by the card's own 22dp corner rather than sitting inside a
+         margin. -->
+    <dimen name="study_detail_sun_arc_view_holder_height">190dp</dimen>
+    <dimen name="study_detail_sun_arc_view_arc_margin_horizontal">25dp</dimen>
+    <dimen name="study_detail_sun_arc_view_bg_arc_stroke_width">4.5dp</dimen>
+    <dimen name="study_detail_sun_arc_view_current_arc_stroke_width">6dp</dimen>
+    <dimen name="study_detail_sun_arc_view_sun">23dp</dimen>
+    <dimen name="study_detail_sun_arc_moon_text_width">110dp</dimen>
+    <dimen name="study_detail_sun_arc_moon_text_title_min_height">18dp</dimen>
+    <dimen name="study_detail_sun_arc_moon_text_value_min_height">26dp</dimen>
+    <dimen name="study_detail_sun_arc_moon_text_horizontal_gap_min">42dp</dimen>
+    <dimen name="study_detail_sun_arc_moon_text_horizontal_gap_max">84dp</dimen>
+
+    <dimen name="study_detail_moon_card_height">190dp</dimen>
+    <dimen name="study_detail_moon_image_size">90dp</dimen>
+    <dimen name="study_detail_moon_icon_margin_end">25dp</dimen>
+    <dimen name="study_detail_moon_state_text_width">120dp</dimen>
+    <dimen name="study_detail_moon_state_margin_top">6dp</dimen>
+    <dimen name="study_detail_moon_state_text_margin_end">10dp</dimen>
+    <dimen name="study_detail_moon_first_value_margin_start">20dp</dimen>
+    <dimen name="study_detail_moon_first_value_margin_bottom">13dp</dimen>
+    <dimen name="study_detail_moon_second_title_margin_start">20dp</dimen>
+    <dimen name="study_detail_moon_second_title_margin_top">-5dp</dimen>
+
     <dimen name="study_sun_arc_height">96dp</dimen>
     <dimen name="study_moon_size">56dp</dimen>
     <dimen name="study_bottom_index_icon">24dp</dimen>

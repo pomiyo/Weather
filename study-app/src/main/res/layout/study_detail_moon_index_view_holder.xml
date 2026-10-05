@@ -1,67 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_moon_index_view_holder.xml
-  Hosts StudyMoonPhaseView - the two-circle terminator construction.
+  Educational reconstruction of detail_moon_index_view_holder.xml.
+
+  Session 3 rewrite. A card in its own right, 190dp like the sun card beside it: a 90dp
+  moon image on the left with the phase name under it, and moonrise/moonset as
+  title-over-value pairs on the right, reusing the sun card's 110dp column and its 11sp
+  grey / 20sp white 600 pairing.
+
+  The original's -5dp top margin on the second title is reproduced: it pulls the moonset
+  block up so the two pairs read as one group rather than two evenly spaced rows. Negative
+  margins like that are easy to dismiss as a mistake and are exactly the sort of detail
+  this reconstruction exists to notice.
 -->
 <dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/card_root"
+    android:id="@+id/moon_container"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="@dimen/study_card_margin"
-    android:background="@drawable/study_card_background"
-    android:padding="@dimen/study_card_padding">
+    android:layout_height="@dimen/study_detail_moon_card_height"
+    android:focusable="true">
 
-    <TextView
-        android:id="@+id/card_title"
-        android:layout_width="0dp"
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/moon_vertical_guideline"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardTitle"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/moon_horizontal_guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.5" />
+
+    <dev.local.weatherstudy.app.detail.view.StudyMoonPhaseView
+        android:id="@+id/moon_icon"
+        android:layout_width="@dimen/study_detail_moon_image_size"
+        android:layout_height="@dimen/study_detail_moon_image_size"
+        android:layout_marginEnd="@dimen/study_detail_moon_icon_margin_end"
+        app:layout_constraintBottom_toBottomOf="@id/moon_horizontal_guideline"
+        app:layout_constraintEnd_toStartOf="@id/moon_vertical_guideline"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-    <dev.local.weatherstudy.app.detail.view.StudyMoonPhaseView
-        android:id="@+id/moon_phase"
-        android:layout_width="@dimen/study_moon_size"
-        android:layout_height="@dimen/study_moon_size"
-        android:layout_marginTop="@dimen/study_card_inner_spacing"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/card_title" />
 
-    <TextView
-        android:id="@+id/moon_phase_text"
-        android:layout_width="0dp"
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/moon_state"
+        android:layout_width="@dimen/study_detail_moon_state_text_width"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/study_card_inner_spacing"
-        android:textAppearance="@style/Study.TextAppearance.CardValue"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/moon_phase"
-        app:layout_constraintTop_toTopOf="@id/moon_phase" />
+        android:layout_marginTop="@dimen/study_detail_moon_state_margin_top"
+        android:layout_marginEnd="@dimen/study_detail_moon_state_text_margin_end"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="2"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.White.11sp"
+        app:layout_constraintEnd_toEndOf="@id/moon_icon"
+        app:layout_constraintStart_toStartOf="@id/moon_icon"
+        app:layout_constraintTop_toBottomOf="@id/moon_icon" />
 
-    <TextView
-        android:id="@+id/moonrise_time"
-        android:layout_width="wrap_content"
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/moon_first_title"
+        android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption"
-        app:layout_constraintStart_toStartOf="@id/moon_phase_text"
-        app:layout_constraintTop_toBottomOf="@id/moon_phase_text" />
+        android:layout_marginStart="@dimen/study_detail_moon_first_value_margin_start"
+        android:ellipsize="end"
+        android:minHeight="@dimen/study_detail_sun_arc_moon_text_title_min_height"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.11sp"
+        app:layout_constraintBottom_toTopOf="@id/moon_first_value"
+        app:layout_constraintStart_toEndOf="@id/moon_vertical_guideline"
+        app:layout_constraintVertical_chainStyle="packed" />
 
-    <TextView
-        android:id="@+id/moonset_time"
-        android:layout_width="wrap_content"
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/moon_first_value"
+        android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/study_card_inner_spacing"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption"
-        app:layout_constraintStart_toEndOf="@id/moonrise_time"
-        app:layout_constraintTop_toTopOf="@id/moonrise_time" />
+        android:layout_marginStart="@dimen/study_detail_moon_first_value_margin_start"
+        android:layout_marginBottom="@dimen/study_detail_moon_first_value_margin_bottom"
+        android:ellipsize="end"
+        android:minHeight="@dimen/study_detail_sun_arc_moon_text_value_min_height"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20sp"
+        app:layout_constraintBottom_toTopOf="@id/moon_second_title"
+        app:layout_constraintStart_toEndOf="@id/moon_vertical_guideline"
+        app:layout_constraintTop_toBottomOf="@id/moon_first_title"
+        app:layout_constraintVertical_chainStyle="packed" />
 
-    <TextView
-        android:id="@+id/moon_illumination"
-        android:layout_width="wrap_content"
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/moon_second_title"
+        android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption"
-        app:layout_constraintStart_toStartOf="@id/moon_phase_text"
-        app:layout_constraintTop_toBottomOf="@id/moonrise_time" />
+        android:layout_marginStart="@dimen/study_detail_moon_second_title_margin_start"
+        android:layout_marginTop="@dimen/study_detail_moon_second_title_margin_top"
+        android:ellipsize="end"
+        android:minHeight="@dimen/study_detail_sun_arc_moon_text_title_min_height"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.11sp"
+        app:layout_constraintBottom_toTopOf="@id/moon_second_value"
+        app:layout_constraintStart_toEndOf="@id/moon_vertical_guideline"
+        app:layout_constraintTop_toBottomOf="@id/moon_first_value"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/moon_second_value"
+        android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/study_detail_moon_second_title_margin_start"
+        android:ellipsize="end"
+        android:minHeight="@dimen/study_detail_sun_arc_moon_text_value_min_height"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/moon_vertical_guideline"
+        app:layout_constraintTop_toBottomOf="@id/moon_second_title"
+        app:layout_constraintVertical_chainStyle="packed" />
 
 </dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

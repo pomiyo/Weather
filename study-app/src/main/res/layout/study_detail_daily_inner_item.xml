@@ -1,53 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_daily_inner_item.xml
-  One day. The high/low range bar uses the ratio pair computed in StudyDetailDailyItemState.
+  Educational reconstruction of detail_daily_inner_item.xml - one day.
+
+  Session 3 rewrite, and the card's biggest divergence until now.
+
+  THE ORIGINAL HAS NO TEMPERATURE RANGE BAR. The row ends with two plain 16sp weight-600
+  numbers 4dp apart, right aligned:
+
+      day | droplet + %  |  day icon  night icon  |  high  low
+
+  The previous reconstruction drew a wide yellow gradient range bar between the low and the
+  high, which is the single most un-Samsung element anywhere on the screen - it reads as a
+  Material slider and nothing in the APK produces it.
+
+  Two other things it got wrong:
+
+  * TWO weather icons, not one. The original shows the DAY condition and the NIGHT condition
+    side by side, 24dp each with a 12dp gap. A single icon throws away half the forecast.
+  * the precipitation chance is a 10x13dp droplet glyph followed by a 10sp GREY value, not a
+    bare white percentage at body size.
+
+  ### The spacers are the layout
+
+  iv_detail_daily_item_space1..3 are zero-width Views between the groups. ConstraintLayout
+  distributes the leftover width across them, so the columns spread with the card rather
+  than each claiming a fixed width - which is why the original's rows stay aligned on a
+  tablet and in landscape without a second layout. Reproduced here rather than replaced with
+  fixed widths.
 -->
-<LinearLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:paddingVertical="@dimen/study_daily_row_padding">
+    android:layout_height="wrap_content">
 
-    <TextView
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/daily_day"
-        android:layout_width="@dimen/study_daily_day_width"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+        android:singleLine="true"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.15sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/daily_space1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/daily_precipitation"
-        android:layout_width="@dimen/study_daily_precip_width"
-        android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+    <Space
+        android:id="@+id/daily_space1"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        app:layout_constraintEnd_toStartOf="@id/daily_precipitation_icon"
+        app:layout_constraintStart_toEndOf="@id/daily_day" />
 
     <ImageView
-        android:id="@+id/daily_icon"
-        android:layout_width="@dimen/study_daily_icon_size"
-        android:layout_height="@dimen/study_daily_icon_size"
-        android:contentDescription="@null" />
+        android:id="@+id/daily_precipitation_icon"
+        android:layout_width="@dimen/study_detail_precipitation_icon_width"
+        android:layout_height="@dimen/study_detail_precipitation_icon_height"
+        android:contentDescription="@null"
+        android:src="@drawable/study_ic_droplet"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/daily_precipitation"
+        app:layout_constraintStart_toEndOf="@id/daily_space1"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/daily_precipitation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/study_detail_daily_precipitation_value_margin_start"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.10sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/daily_space2"
+        app:layout_constraintStart_toEndOf="@id/daily_precipitation_icon"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Space
+        android:id="@+id/daily_space2"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        app:layout_constraintEnd_toStartOf="@id/daily_icon"
+        app:layout_constraintStart_toEndOf="@id/daily_precipitation" />
+
+    <!-- the day condition -->
+    <ImageView
+        android:id="@+id/daily_icon"
+        android:layout_width="@dimen/study_detail_daily_weather_icon_size"
+        android:layout_height="@dimen/study_detail_daily_weather_icon_size"
+        android:layout_marginEnd="@dimen/study_detail_daily_icon_gap"
+        android:contentDescription="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/daily_icon_night"
+        app:layout_constraintStart_toEndOf="@id/daily_space2"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- and the night condition beside it -->
+    <ImageView
+        android:id="@+id/daily_icon_night"
+        android:layout_width="@dimen/study_detail_daily_weather_icon_size"
+        android:layout_height="@dimen/study_detail_daily_weather_icon_size"
+        android:contentDescription="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/daily_space3"
+        app:layout_constraintStart_toEndOf="@id/daily_icon"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Space
+        android:id="@+id/daily_space3"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        app:layout_constraintEnd_toStartOf="@id/daily_high"
+        app:layout_constraintStart_toEndOf="@id/daily_icon_night" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/daily_high"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/study_detail_daily_high_low_temp_text_gap"
+        android:gravity="end"
+        android:singleLine="true"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.16sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/daily_low"
+        app:layout_constraintStart_toEndOf="@id/daily_space3"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/daily_low"
-        android:layout_width="@dimen/study_daily_temp_width"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="end"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+        android:singleLine="true"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.16sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@id/daily_high"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <dev.local.weatherstudy.app.detail.view.StudyDailyRangeBar
-        android:id="@+id/daily_range"
-        android:layout_width="0dp"
-        android:layout_height="@dimen/study_daily_range_height"
-        android:layout_gravity="center_vertical"
-        android:layout_weight="1" />
-
-    <TextView
-        android:id="@+id/daily_high"
-        android:layout_width="@dimen/study_daily_temp_width"
-        android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardValue" />
-
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -48,6 +48,7 @@ import dev.local.weatherstudy.ui.common.detail.state.StudyDetailPrecipitationCar
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailPrecipitationItemState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailScreenState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailState
+import dev.local.weatherstudy.ui.common.detail.state.StudyDetailSunAndMoonCardState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailSunCardState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailTopInfoState
 import dev.local.weatherstudy.ui.common.detail.state.StudyIndexGraphViewEntity
@@ -199,6 +200,7 @@ class StudyDetailDailyCardStateProvider @Inject constructor(
                 StudyDetailDailyItemState(
                     dayText = if (index == 0) TODAY else timeNotation.formatDayOfWeek(day.time.epochTime, zone),
                     dateText = timeNotation.formatDate(day.time.epochTime, zone),
+                    nightIconNum = day.nightCondition.iconNum,
                     iconNum = day.dayCondition.iconNum,
                     highText = temperatureNotation.format(day.dayCondition.maxTemp, tempScale),
                     lowText = temperatureNotation.format(day.nightCondition.minTemp, tempScale),
@@ -660,8 +662,28 @@ class StudyDetailItemStateListProvider @Inject constructor(
             put(StudyDetailCardType.Daily, dailyProvider(weather, tempScale))
             put(StudyDetailCardType.AirIndex, airIndexProvider(weather))
             put(StudyDetailCardType.Index, indexProvider(weather, tempScale))
-            put(StudyDetailCardType.Sun, sunProvider(weather))
-            put(StudyDetailCardType.Moon, moonProvider(weather))
+            val sun = sunProvider(weather)
+            val moon = moonProvider(weather)
+            put(StudyDetailCardType.Sun, sun)
+            put(StudyDetailCardType.Moon, moon)
+
+            // SunAndMoon is a THIRD card type, not the other two rendered together.
+            //
+            // GetCardOrderImpl emits it whenever both Sun and Moon are visible, and
+            // SunAndMoonViewHolder looks its state up by that type - so the map needs an
+            // entry under it or the holder finds nothing, hides itself and leaves a
+            // full-width hole in the grid. That is exactly what happened when the real card
+            // order replaced the old static list: the order started asking for SunAndMoon
+            // while the state map still only held Sun and Moon, and everything below the
+            // daily forecast collapsed into an empty gap.
+            put(
+                StudyDetailCardType.SunAndMoon,
+                StudyDetailSunAndMoonCardState(
+                    isVisible = sun.isVisible && moon.isVisible,
+                    sun = sun,
+                    moon = moon,
+                ),
+            )
             put(
                 StudyDetailCardType.Indicator,
                 StudyDetailIndicatorCardState(indicator = indicatorProvider(weather)),

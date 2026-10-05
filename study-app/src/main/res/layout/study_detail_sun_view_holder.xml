@@ -1,52 +1,115 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_sun_view_holder.xml
-  Hosts StudySunCurvedPathView. The arc marker is placed by PathMeasure at the fraction
-  StudySunProgressNotation computed - the view never sees a timestamp.
+  Educational reconstruction of detail_sun_view_holder.xml.
+
+  Session 3 rewrite. Two things the previous version got wrong:
+
+  1. The arc was inset inside the card with margins. The original's SunCurvedPathView is
+     layout_width="0dp" layout_height="0dp" constrained to ALL FOUR sides, so it fills the
+     entire card and the curve runs edge to edge - clipped by the card's own 22dp corner
+     rather than stopping short of it. That full-bleed is most of what the card looks like.
+
+  2. The card has NO TITLE, and the times are a label ABOVE a value, not one line:
+     an 11sp grey title over a 20sp weight-600 white value, each in a fixed 110dp column,
+     with a Space between whose width floats between 42dp and 84dp so the pair stays centred
+     on any screen.
+
+  The horizontal guideline at 66% is what puts the text in the lower third while the arc
+  keeps the upper two thirds.
 -->
 <dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/card_root"
+    android:id="@+id/sun_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/study_card_margin"
-    android:background="@drawable/study_card_background"
-    android:padding="@dimen/study_card_padding">
+    android:focusable="true"
+    android:minHeight="@dimen/study_detail_sun_arc_view_holder_height">
 
-    <TextView
-        android:id="@+id/card_title"
+    <dev.local.weatherstudy.app.detail.view.StudySunCurvedPathView
+        android:id="@+id/sun_curved_view"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardTitle"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-    <dev.local.weatherstudy.app.detail.view.StudySunCurvedPathView
-        android:id="@+id/sun_arc"
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guide_line_sun_text_top"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.66" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/sun_rise_title"
+        android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:minHeight="@dimen/study_detail_sun_arc_moon_text_title_min_height"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.11sp"
+        app:layout_constraintBottom_toTopOf="@id/sun_rise_value"
+        app:layout_constraintEnd_toStartOf="@id/sun_space_center"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/guide_line_sun_text_top"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/sun_rise_value"
+        android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:minHeight="@dimen/study_detail_sun_arc_moon_text_value_min_height"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/sun_rise_title"
+        app:layout_constraintStart_toStartOf="@id/sun_rise_title"
+        app:layout_constraintTop_toBottomOf="@id/sun_rise_title"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <!-- floats between 42dp and 84dp so the two columns stay centred on any width -->
+    <Space
+        android:id="@+id/sun_space_center"
         android:layout_width="0dp"
-        android:layout_height="@dimen/study_sun_arc_height"
-        android:layout_marginTop="@dimen/study_card_inner_spacing"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/card_title" />
+        android:layout_height="1dp"
+        app:layout_constraintEnd_toStartOf="@id/sun_set_title"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@id/sun_rise_title"
+        app:layout_constraintTop_toTopOf="@id/sun_rise_title"
+        app:layout_constraintWidth_max="@dimen/study_detail_sun_arc_moon_text_horizontal_gap_max"
+        app:layout_constraintWidth_min="@dimen/study_detail_sun_arc_moon_text_horizontal_gap_min" />
 
-    <TextView
-        android:id="@+id/sunrise_time"
-        android:layout_width="wrap_content"
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/sun_set_title"
+        android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:textAppearance="@style/Study.TextAppearance.CardValue"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sun_arc" />
-
-    <TextView
-        android:id="@+id/sunset_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:textAppearance="@style/Study.TextAppearance.CardValue"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:minHeight="@dimen/study_detail_sun_arc_moon_text_title_min_height"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.11sp"
+        app:layout_constraintBottom_toTopOf="@id/sun_set_value"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sun_arc" />
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toEndOf="@id/sun_space_center"
+        app:layout_constraintTop_toBottomOf="@id/guide_line_sun_text_top"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/sun_set_value"
+        android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:minHeight="@dimen/study_detail_sun_arc_moon_text_value_min_height"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/sun_set_title"
+        app:layout_constraintStart_toStartOf="@id/sun_set_title"
+        app:layout_constraintTop_toBottomOf="@id/sun_set_title"
+        app:layout_constraintVertical_chainStyle="packed" />
 
 </dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

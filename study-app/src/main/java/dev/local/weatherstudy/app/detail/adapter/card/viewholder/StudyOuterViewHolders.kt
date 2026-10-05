@@ -3,6 +3,7 @@ package dev.local.weatherstudy.app.detail.adapter.card.viewholder
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.constraintlayout.widget.Guideline
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -156,7 +157,13 @@ class StudyDailyViewHolder(
 
     init {
         setTitle(R.string.study_card_daily)
-        itemView.findViewById<RecyclerView>(R.id.daily_list).attachVertical(adapter)
+        itemView.findViewById<RecyclerView>(R.id.daily_list).apply {
+            // qualified: inside apply{}, a bare `adapter` is the RecyclerView's own property
+            attachVertical(this@StudyDailyViewHolder.adapter)
+            // 18dp between rows. Without it ten days stack flush and the card reads as a
+            // block of text rather than a list - see study_detail_daily_view_holder.xml.
+            addItemDecoration(StudyVerticalGap(resources, R.dimen.study_detail_daily_item_vertical_gap))
+        }
     }
 
     override fun onRender(state: StudyDetailState, item: StudyDetailItemState?) {
@@ -383,9 +390,8 @@ class StudySunViewHolder(
     override val cardType = StudyDetailCardType.Sun
     private val binder = StudySunBinder(itemView)
 
-    init {
-        setTitle(R.string.study_card_sun)
-    }
+    // No title: the sun card's arc fills the whole card and the two labelled times carry
+    // the meaning. The original declares no title view here at all.
 
     override fun onRender(state: StudyDetailState, item: StudyDetailItemState?) {
         val card = card<StudyDetailSunCardState>(state, item) ?: return
@@ -400,9 +406,7 @@ class StudyMoonViewHolder(
     override val cardType = StudyDetailCardType.Moon
     private val binder = StudyMoonBinder(itemView)
 
-    init {
-        setTitle(R.string.study_card_moon)
-    }
+    // No title, as with the sun card beside it.
 
     override fun onRender(state: StudyDetailState, item: StudyDetailItemState?) {
         val card = card<StudyDetailMoonCardState>(state, item) ?: return
@@ -419,12 +423,10 @@ class StudySunAndMoonViewHolder(
     onAction: (StudyDetailCardType) -> Unit,
 ) : StudyDetailCommonViewHolder(itemView, onAction) {
     override val cardType = StudyDetailCardType.SunAndMoon
+    // Two cards, one view type: the layout is a LinearLayout of two included card layouts
+    // with a 10dp Space between, so each binder addresses its own card's views.
     private val sun = StudySunBinder(itemView)
     private val moon = StudyMoonBinder(itemView)
-
-    init {
-        setTitle(R.string.study_card_sun_and_moon)
-    }
 
     override fun onRender(state: StudyDetailState, item: StudyDetailItemState?) {
         val card = card<StudyDetailSunAndMoonCardState>(state, item) ?: return
@@ -516,66 +518,104 @@ class StudyIndicatorViewHolder(
 
 // ---------------------------------------------------------------- shared pieces
 
-/** The sun arc and its two times. Shared by the sun card and the combined card. */
+/**
+ * The sun arc and its two times.
+ *
+ * Session 3: the times are now a LABEL above a VALUE in separate views, matching the
+ * original - 11sp grey over 20sp weight-600 white. The single "Sunrise 5:33 AM" line the
+ * previous version drew cannot carry that contrast.
+ */
 private class StudySunBinder(root: View) {
-    private val arc: StudySunCurvedPathView = root.findViewById(R.id.sun_arc)
-    private val sunrise: TextView = root.findViewById(R.id.sunrise_time)
-    private val sunset: TextView = root.findViewById(R.id.sunset_time)
+    private val arc: StudySunCurvedPathView = root.findViewById(R.id.sun_curved_view)
+    private val riseTitle: TextView = root.findViewById(R.id.sun_rise_title)
+    private val riseValue: TextView = root.findViewById(R.id.sun_rise_value)
+    private val setTitle: TextView = root.findViewById(R.id.sun_set_title)
+    private val setValue: TextView = root.findViewById(R.id.sun_set_value)
 
     fun bind(card: StudyDetailSunCardState) {
         val context = arc.context
         arc.progress = card.sunProgress
         arc.isPolarDay = card.isPolarDay
         arc.isPolarNight = card.isPolarNight
+
+        // Polar day and night have no sunrise or sunset to show, so the pair collapses to
+        // one statement across the card rather than two empty columns.
         when {
             card.isPolarDay -> {
-                sunrise.text = context.getString(R.string.study_polar_day)
-                sunset.text = ""
+                riseTitle.text = ""
+                riseValue.text = context.getString(R.string.study_polar_day)
+                setTitle.text = ""
+                setValue.text = ""
             }
             card.isPolarNight -> {
-                sunrise.text = context.getString(R.string.study_polar_night)
-                sunset.text = ""
+                riseTitle.text = ""
+                riseValue.text = context.getString(R.string.study_polar_night)
+                setTitle.text = ""
+                setValue.text = ""
             }
             else -> {
-                sunrise.text = context.getString(R.string.study_sunrise, card.sunriseText)
-                sunset.text = context.getString(R.string.study_sunset, card.sunsetText)
+                riseTitle.setText(R.string.study_label_sunrise)
+                riseValue.text = card.sunriseText
+                setTitle.setText(R.string.study_label_sunset)
+                setValue.text = card.sunsetText
             }
         }
     }
 }
 
-/** The moon disc and its texts. Shared by the moon card and the combined card. */
+/**
+ * The moon disc, its phase name and its two times.
+ *
+ * Same label-over-value pairing as the sun card; the two share
+ * study_detail_sun_arc_moon_text_* so the columns line up between the stacked cards.
+ */
 private class StudyMoonBinder(root: View) {
-    private val disc: StudyMoonPhaseView = root.findViewById(R.id.moon_phase)
-    private val phase: TextView = root.findViewById(R.id.moon_phase_text)
-    private val moonrise: TextView? = root.findViewById(R.id.moonrise_time)
-    private val moonset: TextView? = root.findViewById(R.id.moonset_time)
-    private val illumination: TextView? = root.findViewById(R.id.moon_illumination)
+    private val disc: StudyMoonPhaseView = root.findViewById(R.id.moon_icon)
+    private val phase: TextView = root.findViewById(R.id.moon_state)
+    private val firstTitle: TextView = root.findViewById(R.id.moon_first_title)
+    private val firstValue: TextView = root.findViewById(R.id.moon_first_value)
+    private val secondTitle: TextView = root.findViewById(R.id.moon_second_title)
+    private val secondValue: TextView = root.findViewById(R.id.moon_second_value)
+    private val verticalGuideline: Guideline? = root.findViewById(R.id.moon_vertical_guideline)
 
     fun bind(card: StudyDetailMoonCardState) {
-        val context = disc.context
         disc.illuminationFraction = card.illuminationFraction
         // new moon -> full moon is the waxing half of the eight phases
         disc.isWaxing = card.phase <= StudyIndexLevel.MoonPhase.FULL_MOON
         phase.text = card.phaseText
-        moonrise.setOrHide(card.moonriseText) { context.getString(R.string.study_moonrise, it) }
-        moonset.setOrHide(card.moonsetText) { context.getString(R.string.study_moonset, it) }
-        illumination?.text = context.getString(
-            R.string.study_moon_illumination,
-            (card.illuminationFraction * PERCENT).roundToInt(),
-        )
+
+        val hasRise = bindPair(firstTitle, firstValue, R.string.study_label_moonrise, card.moonriseText)
+        val hasSet = bindPair(secondTitle, secondValue, R.string.study_label_moonset, card.moonsetText)
+
+        // DEVIATION, provider capability.
+        //
+        // The original's moon card is a two-column layout because its provider supplies
+        // moonrise and moonset. This reconstruction's gateway (Open-Meteo) supplies the
+        // phase but neither time, so the right column is permanently empty and the card
+        // reads as broken rather than as sparse.
+        //
+        // When neither time is known the guideline moves to the full width, which centres
+        // the disc and its phase name across the card. The layout is unchanged - this is
+        // the same mechanism the original uses to reflow for a provider with less data,
+        // rather than a second layout. Flagged in reports/visual-comparison.md.
+        verticalGuideline?.setGuidelinePercent(if (hasRise || hasSet) HALF else FULL)
     }
 
-    /** a provider that does not supply the time leaves the row out rather than showing "--" */
-    private fun TextView?.setOrHide(value: String, format: (String) -> String) {
-        this ?: return
-        val known = value.isNotEmpty() && value != StudyTemperatureNotation.INVALID_TEXT
-        visibility = if (known) View.VISIBLE else View.GONE
-        if (known) text = format(value)
+    /** a provider that does not supply the time leaves the pair out rather than showing "--" */
+    private fun bindPair(title: TextView, value: TextView, labelRes: Int, text: String): Boolean {
+        val known = text.isNotEmpty() && text != StudyTemperatureNotation.INVALID_TEXT
+        title.visibility = if (known) View.VISIBLE else View.GONE
+        value.visibility = if (known) View.VISIBLE else View.GONE
+        if (known) {
+            title.setText(labelRes)
+            value.text = text
+        }
+        return known
     }
 
     private companion object {
-        const val PERCENT = 100
+        const val HALF = 0.5f
+        const val FULL = 1f
     }
 }
 
@@ -619,5 +659,30 @@ private class StudyIndexGridSpacing(resources: android.content.res.Resources) :
         outRect.left = if (column == 0) 0 else gap / 2
         outRect.right = if (column == spanCount - 1) 0 else gap / 2
         if (position >= spanCount) outRect.top = gap
+    }
+}
+
+/**
+ * A fixed gap between every row after the first.
+ *
+ * The original expresses row rhythm as a dimension consumed by the adapter rather than as a
+ * margin on the item layout, so the same row layout can sit in a tight list and a loose one.
+ * detail_daily_item_vertical_gap has a _large sibling at 29.75dp for exactly that reason.
+ */
+private class StudyVerticalGap(
+    resources: android.content.res.Resources,
+    gapRes: Int,
+) : RecyclerView.ItemDecoration() {
+
+    private val gap = resources.getDimensionPixelSize(gapRes)
+
+    override fun getItemOffsets(
+        outRect: android.graphics.Rect,
+        view: View,
+        parent: RecyclerView,
+        state: RecyclerView.State,
+    ) {
+        val position = parent.getChildAdapterPosition(view)
+        if (position > 0) outRect.top = gap
     }
 }

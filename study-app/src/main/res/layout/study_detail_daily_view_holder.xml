@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_daily_view_holder.xml
-  Vertical list of days.
+  Educational reconstruction of detail_daily_view_holder.xml - the vertical list of days.
+
+  Session 3: the rows were flush against each other. The original separates them by
+  detail_daily_item_vertical_gap (18dp) and pads the card 12dp vertically / 22dp
+  horizontally - so ten rows occupy roughly twice the height and read as a list rather than
+  a block of text. The gap dimension had been traced and then not applied, which is the
+  whole reason the card looked cramped.
+
+  android:background and layout_margin are gone: StudyDetailCardConstraintLayout sets its
+  own surface in its constructor, so declaring one here was redundant and misleading.
 -->
 <dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -9,9 +17,8 @@
     android:id="@+id/card_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/study_card_margin"
-    android:background="@drawable/study_card_background"
-    android:padding="@dimen/study_card_padding">
+    android:paddingVertical="@dimen/study_detail_daily_padding_vertical"
+    android:paddingHorizontal="@dimen/study_detail_daily_padding_horizontal">
 
     <TextView
         android:id="@+id/card_title"

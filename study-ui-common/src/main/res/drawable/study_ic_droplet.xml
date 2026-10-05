@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The precipitation-chance glyph: a droplet.
+
+  Drawn at the original's 10x13dp aspect (detail_precipitation_icon_width / _height), which
+  is why it is tall rather than square. The hourly strip and the daily rows both use it
+  ahead of the percentage; this project was using an umbrella in both places, which is a
+  different idea - an umbrella is advice, a droplet is a measurement.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="10dp"
+    android:height="13dp"
+    android:viewportWidth="10"
+    android:viewportHeight="13">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5,0.6 C5,0.6 9.4,6.0 9.4,8.5 C9.4,10.93 7.43,12.9 5,12.9 C2.57,12.9 0.6,10.93 0.6,8.5 C0.6,6.0 5,0.6 5,0.6 Z" />
+</vector>

@@ -1,70 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_sun_and_moon_view_holder.xml
-  The combined card - hosts BOTH Canvas views, which is why it is a separate card type
-  from Sun and Moon rather than a layout variant.
+  Educational reconstruction of detail_sun_and_moon_view_holder.xml.
+
+  Session 3 rewrite, and the structural point of the card.
+
+  SunAndMoon is ONE view type that renders TWO visually separate cards. The original is a
+  SeslLinearLayoutCompat holding nothing but
+
+      <include layout="@layout/detail_sun_view_holder" />
+      <Space   android:layout_height="@dimen/detail_gap_between_cards" />
+      <include layout="@layout/detail_moon_index_view_holder" />
+
+  and each of those two layouts is itself a DetailCardConstraintLayout. So what looks like a
+  sun card and a moon card stacked in reference-ui/home-scroll-2.png is a single RecyclerView
+  item. That is the same idiom as the Index card, which is a container of tiles rather than a
+  card - the pattern is worth recognising, because reading the screen and assuming one
+  rounded rectangle means one view type gets both wrong.
+
+  The previous reconstruction drew one combined card titled "Sun and moon", which is why the
+  two never separated.
 -->
-<dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/card_root"
+    android:id="@+id/sun_and_moon_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/study_card_margin"
-    android:background="@drawable/study_card_background"
-    android:padding="@dimen/study_card_padding">
+    android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/card_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-    <dev.local.weatherstudy.app.detail.view.StudySunCurvedPathView
-        android:id="@+id/sun_arc"
-        android:layout_width="0dp"
-        android:layout_height="@dimen/study_sun_arc_height"
-        android:layout_marginTop="@dimen/study_card_inner_spacing"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/card_title" />
+    <include layout="@layout/study_detail_sun_view_holder" />
 
-    <TextView
-        android:id="@+id/sunrise_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sun_arc" />
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/study_detail_gap_between_cards" />
 
-    <TextView
-        android:id="@+id/sunset_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sun_arc" />
+    <include layout="@layout/study_detail_moon_index_view_holder" />
 
-    <dev.local.weatherstudy.app.detail.view.StudyMoonPhaseView
-        android:id="@+id/moon_phase"
-        android:layout_width="@dimen/study_moon_size"
-        android:layout_height="@dimen/study_moon_size"
-        android:layout_marginTop="@dimen/study_card_inner_spacing"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/sunrise_time" />
-
-    <TextView
-        android:id="@+id/moon_phase_text"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/study_card_inner_spacing"
-        android:textAppearance="@style/Study.TextAppearance.CardValue"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/moon_phase"
-        app:layout_constraintTop_toTopOf="@id/moon_phase" />
-
-</dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>
+</LinearLayout>

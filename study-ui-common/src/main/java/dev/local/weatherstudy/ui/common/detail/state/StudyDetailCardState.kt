@@ -90,7 +90,16 @@ data class StudyDetailDailyCardState(
 data class StudyDetailDailyItemState(
     val dayText: String = "",
     val dateText: String = "",
+    /** the DAY condition's icon */
     val iconNum: Int = 0,
+    /**
+     * the NIGHT condition's icon, shown beside the day one.
+     *
+     * The original's row carries both: iv_detail_daily_weather_icon_day and
+     * iv_detail_daily_weather_icon_night, 24dp each with a 12dp gap. Showing only one
+     * throws away half of what the row says.
+     */
+    val nightIconNum: Int = 0,
     val highText: String = "",
     val lowText: String = "",
     val highRatio: Float = 0f,

@@ -65,6 +65,17 @@
     <string name="study_moonrise">Moonrise %1$s</string>
     <string name="study_moonset">Moonset %1$s</string>
     <string name="study_moon_illumination">%1$d%% illuminated</string>
+
+    <!--
+      Bare labels. The original's sun and moon cards put an 11sp grey LABEL above a 20sp
+      white VALUE in separate views, so the combined "Sunrise %1$s" form above no longer
+      applies to those cards; it is kept because the bottom-index card still uses it.
+    -->
+    <string name="study_label_sunrise">Sunrise</string>
+    <string name="study_label_sunset">Sunset</string>
+    <string name="study_label_moonrise">Moonrise</string>
+    <string name="study_label_moonset">Moonset</string>
+
     <string name="study_polar_day">The sun does not set today</string>
     <string name="study_polar_night">The sun does not rise today</string>
 
