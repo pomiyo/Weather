@@ -580,25 +580,22 @@ private class StudyMoonBinder(root: View) {
     private val verticalGuideline: Guideline? = root.findViewById(R.id.moon_vertical_guideline)
 
     fun bind(card: StudyDetailMoonCardState) {
-        disc.illuminationFraction = card.illuminationFraction
-        // new moon -> full moon is the waxing half of the eight phases
-        disc.isWaxing = card.phase <= StudyIndexLevel.MoonPhase.FULL_MOON
+        // one parameter, as in the original: 0 and 1 are new, 0.5 is full, and the
+        // waxing/waning half of the month is already folded into it
+        disc.phaseProgress = card.phaseProgress
         phase.text = card.phaseText
 
         val hasRise = bindPair(firstTitle, firstValue, R.string.study_label_moonrise, card.moonriseText)
         val hasSet = bindPair(secondTitle, secondValue, R.string.study_label_moonset, card.moonsetText)
 
-        // DEVIATION, provider capability.
+        // The right column is normally populated now - moonrise and moonset are computed
+        // in the gateway rather than fetched, because they are astronomy rather than
+        // forecast data (see StudyGatewayMoon.riseSet).
         //
-        // The original's moon card is a two-column layout because its provider supplies
-        // moonrise and moonset. This reconstruction's gateway (Open-Meteo) supplies the
-        // phase but neither time, so the right column is permanently empty and the card
-        // reads as broken rather than as sparse.
-        //
-        // When neither time is known the guideline moves to the full width, which centres
-        // the disc and its phase name across the card. The layout is unchanged - this is
-        // the same mechanism the original uses to reflow for a provider with less data,
-        // rather than a second layout. Flagged in reports/visual-comparison.md.
+        // The reflow is kept for the two days in every lunar month where one of the two
+        // events genuinely does not happen in the local day, and for a provider that
+        // sends neither: the guideline moves to the full width and the disc centres,
+        // which is the same mechanism rather than a second layout.
         verticalGuideline?.setGuidelinePercent(if (hasRise || hasSet) HALF else FULL)
     }
 

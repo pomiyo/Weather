@@ -8,9 +8,12 @@ import java.util.Locale
 import java.util.TimeZone
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.roundToInt
+import kotlin.math.sin
+import kotlin.math.sqrt
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -54,7 +57,7 @@ internal class StudyGatewayForecastComposer {
 
         return JSONObject()
             .put("location", location(named))
-            .put("currentConditions", currentConditions(current, daily, todayIndex, isDay, now))
+            .put("currentConditions", currentConditions(named, current, daily, todayIndex, isDay, now))
             .put("hourlyForecast", hourlyForecast(hourly, now))
             .put("dailyForecast", dailyForecast(daily, now))
             .put("lifeIndex", lifeIndex(current, daily, todayIndex, now))
@@ -67,6 +70,7 @@ internal class StudyGatewayForecastComposer {
     // ---------------------------------------------------------------- current
 
     private fun currentConditions(
+        place: StudyGatewayPlace,
         current: JSONObject,
         daily: JSONObject,
         today: Int,
@@ -75,6 +79,12 @@ internal class StudyGatewayForecastComposer {
     ): JSONObject {
         val code = current.optInt("weather_code", 0)
         val chance = daily.optJSONArray("precipitation_probability_max").int(today)
+        val moon = StudyGatewayMoon.riseSet(
+            epochMillis = now,
+            latitude = place.latitude,
+            longitude = place.longitude,
+            utcOffsetSeconds = place.utcOffsetSeconds,
+        )
         return JSONObject()
             .put("observationTime", current.optLong("time") * MILLIS)
             .put("iconCode", iconCode(code))
@@ -86,6 +96,9 @@ internal class StudyGatewayForecastComposer {
             .put("temperatureMin", unit(daily.optJSONArray("temperature_2m_min").double(today)))
             .put("sunrise", daily.optJSONArray("sunrise").millis(today))
             .put("sunset", daily.optJSONArray("sunset").millis(today))
+            // computed, like the phase: the gateway has no moon fields to forward
+            .put("moonrise", moon.rise)
+            .put("moonset", moon.set)
             .put("dayOrNight", if (isDay) DAY else NIGHT)
             .put("expireTime", now + OBSERVATION_TTL)
     }
@@ -520,25 +533,228 @@ internal class StudyGatewayForecastComposer {
 }
 
 /**
- * Moon phase from the synodic month — no network involved. Accurate to well within the
- * one-in-eight resolution the moon card draws at.
+ * Moon phase from the synodic month, and moonrise / moonset from the moon's own position —
+ * no network involved.
+ *
+ * ### Why the times are computed here
+ *
+ * The original's moon card has two columns because its forecast provider sends moonrise
+ * and moonset. Open-Meteo sends neither, and the card was left with an empty right half
+ * and a guideline hack to centre what remained — informative about the provider, useless
+ * to the reader. Rise and set are not provider data in any meaningful sense though: they
+ * are astronomy, computable from a date and a position, which is what this does.
+ *
+ * The position is Montenbruck & Pfleger's low-precision lunar series (the "MiniMoon"
+ * formulation), good to about 0.3° — far inside the minute-level resolution a clock face
+ * shows. The rise/set search is their standard one too: sample `sin(altitude) - sin(h0)`
+ * every two hours over the local day, fit a parabola through each triple, and take the
+ * roots. `h0 = +0.125°` is the moon's conventional rise altitude: parallax (≈0.95°) less
+ * refraction (≈0.57°) less its own semidiameter (≈0.25°).
+ *
+ * Two days in a lunar month have no moonrise or no moonset at all — the moon rises ~50
+ * minutes later each day, so one of the two events misses the local day entirely. That is
+ * a real answer, not a failure, and it returns [NO_EVENT] so the card can leave that half
+ * of the pair blank the way the original does when its provider omits one.
  */
 internal object StudyGatewayMoon {
 
     data class Moon(val phase: Int, val illumination: Double)
 
+    /** epoch millis, or [NO_EVENT] when the event does not occur on this local day */
+    data class RiseSet(val rise: Long, val set: Long)
+
+    const val NO_EVENT = 0L
+
     fun at(epochMillis: Long): Moon {
         val days = (epochMillis - REFERENCE_NEW_MOON) / MILLIS_PER_DAY
         val age = ((days % SYNODIC_MONTH) + SYNODIC_MONTH) % SYNODIC_MONTH
         val fraction = age / SYNODIC_MONTH
-        val phase = (floor(fraction * PHASE_COUNT + 0.5).toInt() % PHASE_COUNT) + 1
         val illumination = (1 - cos(2 * PI * fraction)) / 2
-        return Moon(phase = phase, illumination = illumination)
+        return Moon(phase = phaseOf(fraction), illumination = illumination)
     }
+
+    /**
+     * The eight names are NOT eight equal eighths of the month.
+     *
+     * Rounding `fraction × 8` to the nearest name gives each of the four instants —
+     * new, first quarter, full, last quarter — a 3.7-day window, so the app calls the moon
+     * "last quarter" for nearly four days. The device's own Samsung Weather called the
+     * same evening's moon a waning crescent while this said last quarter: not a different
+     * moon, a different rounding.
+     *
+     * The four instants are *events*, not phases. They get a half day either side here —
+     * `QUARTER_WINDOW` = 0.5 / 29.53 of the cycle — and the crescents and gibbouses fill
+     * everything between, which is the convention almanacs use and what matched the
+     * original on the day.
+     */
+    private fun phaseOf(fraction: Double): Int = when {
+        fraction < QUARTER_WINDOW || fraction >= 1.0 - QUARTER_WINDOW -> NEW_MOON
+        fraction < 0.25 - QUARTER_WINDOW -> WAXING_CRESCENT
+        fraction < 0.25 + QUARTER_WINDOW -> FIRST_QUARTER
+        fraction < 0.5 - QUARTER_WINDOW -> WAXING_GIBBOUS
+        fraction < 0.5 + QUARTER_WINDOW -> FULL_MOON
+        fraction < 0.75 - QUARTER_WINDOW -> WANING_GIBBOUS
+        fraction < 0.75 + QUARTER_WINDOW -> LAST_QUARTER
+        else -> WANING_CRESCENT
+    }
+
+    /**
+     * Moonrise and moonset for the LOCAL day containing [epochMillis].
+     *
+     * [utcOffsetSeconds] is the place's offset, so the scan runs from local midnight to
+     * local midnight — the same day boundary the sunrise and sunset in the response use.
+     */
+    fun riseSet(
+        epochMillis: Long,
+        latitude: Double,
+        longitude: Double,
+        utcOffsetSeconds: Int,
+    ): RiseSet {
+        val localMidnightUtc = floor(
+            (epochMillis + utcOffsetSeconds * MILLIS_PER_SECOND) / MILLIS_PER_DAY,
+        ) * MILLIS_PER_DAY - utcOffsetSeconds * MILLIS_PER_SECOND
+        val mjd0 = localMidnightUtc / MILLIS_PER_DAY + MJD_AT_EPOCH
+        val latRad = Math.toRadians(latitude)
+
+        var rise = Double.NaN
+        var set = Double.NaN
+        var hour = 1.0
+        var yMinus = sinAltitude(mjd0, hour - 1.0, longitude, latRad) - SIN_H0
+
+        while (hour < HOURS_PER_DAY + 1 && (rise.isNaN() || set.isNaN())) {
+            val y0 = sinAltitude(mjd0, hour, longitude, latRad) - SIN_H0
+            val yPlus = sinAltitude(mjd0, hour + 1.0, longitude, latRad) - SIN_H0
+
+            // the parabola through (-1, yMinus), (0, y0), (+1, yPlus)
+            val a = 0.5 * (yMinus + yPlus) - y0
+            val b = 0.5 * (yPlus - yMinus)
+            val xExtreme = if (a == 0.0) 0.0 else -b / (2 * a)
+            val yExtreme = (a * xExtreme + b) * xExtreme + y0
+            val discriminant = b * b - 4 * a * y0
+
+            if (discriminant >= 0 && a != 0.0) {
+                val dx = 0.5 * sqrt(discriminant) / abs(a)
+                var z1 = xExtreme - dx
+                val z2 = xExtreme + dx
+                val roots = mutableListOf<Double>()
+                if (abs(z1) <= 1.0) roots += z1
+                if (abs(z2) <= 1.0) roots += z2
+                if (z1 < -1.0) z1 = z2
+                when (roots.size) {
+                    1 -> if (yMinus < 0) rise = hour + roots[0] else set = hour + roots[0]
+                    2 -> {
+                        if (yExtreme < 0) {
+                            rise = hour + roots[1]
+                            set = hour + roots[0]
+                        } else {
+                            rise = hour + roots[0]
+                            set = hour + roots[1]
+                        }
+                    }
+                }
+            }
+            hour += 2.0
+            yMinus = yPlus
+        }
+
+        fun toMillis(h: Double) =
+            if (h.isNaN()) NO_EVENT else localMidnightUtc.toLong() + (h * MILLIS_PER_HOUR).toLong()
+        return RiseSet(rise = toMillis(rise), set = toMillis(set))
+    }
+
+    /** `sin(altitude)` of the moon's centre, [hour] hours after the day's start */
+    private fun sinAltitude(mjd0: Double, hour: Double, longitude: Double, latRad: Double): Double {
+        val mjd = mjd0 + hour / HOURS_PER_DAY
+        val t = (mjd - MJD_J2000) / DAYS_PER_CENTURY
+        val (raHours, decRad) = miniMoon(t)
+        val tau = Math.toRadians(DEGREES_PER_HOUR * (localSiderealTime(mjd, longitude) - raHours))
+        return sin(latRad) * sin(decRad) + cos(latRad) * cos(decRad) * cos(tau)
+    }
+
+    /**
+     * Montenbruck & Pfleger's MiniMoon: the moon's right ascension (hours) and
+     * declination (radians) from fifteen periodic terms.
+     *
+     * The series is in arcseconds and the three angles are kept in REVOLUTIONS until the
+     * last moment — `frac` on a revolution is exact where a modulo on degrees accumulates
+     * error over the ±100 years the series is valid for.
+     */
+    private fun miniMoon(t: Double): Pair<Double, Double> {
+        val l0 = frac(0.606433 + 1336.855225 * t)
+        val l = TWO_PI * frac(0.374897 + 1325.552410 * t)
+        val ls = TWO_PI * frac(0.993133 + 99.997361 * t)
+        val d = TWO_PI * frac(0.827361 + 1236.853086 * t)
+        val f = TWO_PI * frac(0.259086 + 1342.227825 * t)
+
+        val dLambda = 22640 * sin(l) - 4586 * sin(l - 2 * d) + 2370 * sin(2 * d) +
+            769 * sin(2 * l) - 668 * sin(ls) - 412 * sin(2 * f) -
+            212 * sin(2 * l - 2 * d) - 206 * sin(l + ls - 2 * d) +
+            192 * sin(l + 2 * d) - 165 * sin(ls - 2 * d) - 125 * sin(d) -
+            110 * sin(l + ls) + 148 * sin(l - ls) - 55 * sin(2 * f - 2 * d)
+
+        val s = f + (dLambda + 412 * sin(2 * f) + 541 * sin(ls)) / ARCSECONDS_PER_RADIAN
+        val h = f - 2 * d
+        val n = -526 * sin(h) + 44 * sin(l + h) - 31 * sin(-l + h) - 23 * sin(ls + h) +
+            11 * sin(-ls + h) - 25 * sin(-2 * l + f) + 21 * sin(-l + f)
+
+        val lambda = TWO_PI * frac(l0 + dLambda / ARCSECONDS_PER_REVOLUTION)
+        val beta = (18520.0 * sin(s) + n) / ARCSECONDS_PER_RADIAN
+
+        val cosBeta = cos(beta)
+        val x = cosBeta * cos(lambda)
+        val v = cosBeta * sin(lambda)
+        val w = sin(beta)
+        val obliquity = Math.toRadians(OBLIQUITY_DEGREES)
+        val y = cos(obliquity) * v - sin(obliquity) * w
+        val z = sin(obliquity) * v + cos(obliquity) * w
+        val rho = sqrt(1.0 - z * z)
+
+        val dec = atan2(z, rho)
+        var ra = (HOURS_PER_DAY / TWO_PI) * atan2(y, x)
+        if (ra < 0) ra += HOURS_PER_DAY
+        return ra to dec
+    }
+
+    /** local mean sidereal time, in hours */
+    private fun localSiderealTime(mjd: Double, longitude: Double): Double {
+        val mjd0 = floor(mjd)
+        val ut = (mjd - mjd0) * HOURS_PER_DAY
+        val t = (mjd0 - MJD_J2000) / DAYS_PER_CENTURY
+        val gmst = 6.697374558 + 1.0027379093 * ut +
+            (8640184.812866 + (0.093104 - 6.2e-6 * t) * t) * t / SECONDS_PER_HOUR_D
+        return ((gmst + longitude / DEGREES_PER_HOUR) % HOURS_PER_DAY + HOURS_PER_DAY) %
+            HOURS_PER_DAY
+    }
+
+    private fun frac(x: Double): Double = x - floor(x)
 
     /** 2000-01-06 18:14 UTC, a well-documented new moon */
     private const val REFERENCE_NEW_MOON = 947_182_440_000L
     private const val SYNODIC_MONTH = 29.530588853
     private const val MILLIS_PER_DAY = 86_400_000.0
-    private const val PHASE_COUNT = 8
+    private const val MILLIS_PER_HOUR = 3_600_000.0
+    private const val MILLIS_PER_SECOND = 1_000.0
+    /** half a day either side of each of the four instants */
+    private const val QUARTER_WINDOW = 0.5 / SYNODIC_MONTH
+    private const val NEW_MOON = 1
+    private const val WAXING_CRESCENT = 2
+    private const val FIRST_QUARTER = 3
+    private const val WAXING_GIBBOUS = 4
+    private const val FULL_MOON = 5
+    private const val WANING_GIBBOUS = 6
+    private const val LAST_QUARTER = 7
+    private const val WANING_CRESCENT = 8
+    private const val TWO_PI = 2 * PI
+    private const val HOURS_PER_DAY = 24.0
+    private const val DEGREES_PER_HOUR = 15.0
+    private const val SECONDS_PER_HOUR_D = 3600.0
+    private const val DAYS_PER_CENTURY = 36525.0
+    /** MJD of 1970-01-01, and of J2000.0 */
+    private const val MJD_AT_EPOCH = 40587.0
+    private const val MJD_J2000 = 51544.5
+    private const val ARCSECONDS_PER_RADIAN = 206264.8062
+    private const val ARCSECONDS_PER_REVOLUTION = 1_296_000.0
+    private const val OBLIQUITY_DEGREES = 23.43929111
+    /** sin(+0.125°) — parallax less refraction less semidiameter */
+    private const val SIN_H0 = 0.002181488
 }

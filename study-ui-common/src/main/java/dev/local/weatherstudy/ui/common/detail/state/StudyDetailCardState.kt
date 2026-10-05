@@ -215,6 +215,12 @@ data class StudyDetailMoonCardState(
     val phase: Int = 0,
     val phaseText: String = "",
     val illuminationFraction: Float = 0f,
+    /**
+     * `MoonUtils.getPhaseProgress` — 0 and 1 are new moon, 0.5 is full, so it runs once
+     * round the synodic month. `DetailMoonPhaseView` takes this directly; the eight named
+     * phases are a rounding of it, not the other way round.
+     */
+    val phaseProgress: Float = 0.5f,
 ) : StudyDetailCardState {
     override val cardType = StudyDetailCardType.Moon
 }

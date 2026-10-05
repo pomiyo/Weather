@@ -10,6 +10,7 @@ import android.util.AttributeSet
 import android.view.View
 import dev.local.weatherstudy.app.R
 import dev.local.weatherstudy.ui.common.detail.state.StudyIndexGraphViewEntity
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -133,14 +134,45 @@ class StudySunCurvedPathView @JvmOverloads constructor(
  *
  * Corresponds conceptually to:
  * com.sec.android.daemonapp.app.detail.view.DetailMoonPhaseView
+ * (+ `…app.common.resource.MoonPhaseImageProvider`, which does the drawing)
  *
- * Observed responsibility: draw one of the eight moon phases
- * ([dev.local.weatherstudy.domain.type.StudyIndexLevel.MoonPhase]). The terminator is a
- * second circle offset horizontally — the classic two-circle construction — and
- * [illuminationFraction] drives the offset, so a continuous value renders smoothly
- * between the eight named phases.
+ * Session 4 rewrite. This drew a flat white disc with a dark disc offset across it — the
+ * classic two-circle terminator. The original draws a PHOTOGRAPH and subtracts the unlit
+ * part from it:
  *
- * This is independently written reconstruction code, not original Samsung source.
+ * ```java
+ * int layer = canvas.saveLayer(0, 0, w, h, null);
+ * canvas.rotate(moonTiltDegree, w/2, h/2);
+ * moonDrawable.setBounds(0, 0, w, h);          // moon_fullmoon_full
+ * moonDrawable.draw(canvas);
+ * // contrastPaint: colour col_000000, BlurMaskFilter(10, NORMAL),
+ * //                PorterDuff.Mode.DST_IN, alpha 32
+ * canvas.drawPath(borderPath, contrastPaint);  // the terminator region
+ * canvas.restoreToCount(layer);
+ * ```
+ *
+ * Three things follow from that paint, and all three are why the original's moon looks
+ * like the sky and a two-circle one never can:
+ *
+ * 1. **DST_IN with alpha 32 does not paint black — it ERASES to 12.5%.** The unlit limb
+ *    stays visible as a faint ghost of the same photograph, which is what the eye
+ *    actually sees on a crescent night. Filling it with `#2B2B2B` gives a hard disc.
+ * 2. **The blur is on the mask, not the image**, so the terminator is a soft gradient a
+ *    few pixels wide rather than a cut edge.
+ * 3. **It is a saved layer.** Without one, DST_IN would erase everything already drawn
+ *    beneath the view, not just the moon.
+ *
+ * The terminator itself is a half-ellipse rather than an offset circle: `arcTo` over a
+ * rect inset by `|1 - 2f| * w/2` on each side, swept ±180°, joined to the right-hand edge
+ * of the canvas. For a waxing moon the whole path is drawn mirrored. That is exactly the
+ * geometry of a sphere's day-night line in orthographic projection — an offset circle is
+ * an approximation of it that is wrong everywhere except at the quarters.
+ *
+ * [phaseProgress] is the original's own parameter: 0 and 1 are new, 0.5 is full, so it
+ * runs once round the synodic month. It comes from `MoonUtils.getPhaseProgress`.
+ *
+ * The photograph is a LOCAL STUDY RESOURCE. Without it the view falls back to the flat
+ * two-circle disc, so a tree without the assets still shows a phase.
  */
 class StudyMoonPhaseView @JvmOverloads constructor(
     context: Context,
@@ -148,12 +180,13 @@ class StudyMoonPhaseView @JvmOverloads constructor(
     defStyleAttr: Int = 0,
 ) : View(context, attrs, defStyleAttr) {
 
-    /** 0 = new moon, 0.5 = full, 1 = new again */
-    var illuminationFraction: Float = 0f
+    /** 0 and 1 = new moon, 0.5 = full — `DetailMoonPhaseView.phaseProgress` */
+    var phaseProgress: Float = 0.5f
         set(value) { field = value.coerceIn(0f, 1f); invalidate() }
 
-    var isWaxing: Boolean = true
-        set(value) { field = value; invalidate() }
+    /** `DetailMoonPhaseView.moonTiltDegree`, in degrees, −180..180 */
+    var moonTiltDegree: Float = 0f
+        set(value) { field = value.coerceIn(-MAX_TILT, MAX_TILT); invalidate() }
 
     var litColor: Int = 0xFFF5F5F5.toInt()
         set(value) { field = value; invalidate() }
@@ -161,39 +194,98 @@ class StudyMoonPhaseView @JvmOverloads constructor(
     var shadowColor: Int = 0xFF2B2B2B.toInt()
         set(value) { field = value; invalidate() }
 
+    private val moon = StudyStudyResource.drawable(context, "study_moon_fullmoon_full")
+
+    /** `contrastPaint` — erases to 12.5% through a blurred mask, it does not paint black */
+    private val contrastPaint = Paint().apply {
+        color = 0xFF000000.toInt()
+        maskFilter = android.graphics.BlurMaskFilter(BLUR_SIZE, android.graphics.BlurMaskFilter.Blur.NORMAL)
+        xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.DST_IN)
+        alpha = CONTRAST_ALPHA
+    }
     private val litPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val clipPath = Path()
+    private val borderPath = Path()
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val w = width.toFloat()
         val h = height.toFloat()
+        if (w <= 0f || h <= 0f) return
+        if (moon == null) {
+            drawFlatFallback(canvas, w, h)
+            return
+        }
+
+        val layer = canvas.saveLayer(0f, 0f, w, h, null)
+        val cx = w / 2f
+        val cy = h / 2f
+        canvas.rotate(moonTiltDegree, cx, cy)
+        moon.setBounds(0, 0, width, height)
+        moon.draw(canvas)
+
+        when {
+            phaseProgress == 0f || phaseProgress == 1f ->
+                canvas.drawRect(-EXTRA_EDGE, -EXTRA_EDGE, w + EXTRA_EDGE, h + EXTRA_EDGE, contrastPaint)
+            phaseProgress == 0.5f -> Unit
+            else -> {
+                val f = if (phaseProgress < 0.5f) phaseProgress * 2f else (1f - phaseProgress) * 2f
+                val inset = cx - abs(1f - f * 2f) * cx
+                borderPath.reset()
+                borderPath.moveTo(cx, cy)
+                borderPath.arcTo(
+                    inset, -BLUR_SIZE / 2f, w - inset, h + BLUR_SIZE / 2f,
+                    90f, if (f < 0.5f) 180f else -180f, true,
+                )
+                borderPath.lineTo(cx, -EXTRA_EDGE)
+                borderPath.lineTo(w + EXTRA_EDGE, -EXTRA_EDGE)
+                borderPath.lineTo(w + EXTRA_EDGE, h + EXTRA_EDGE)
+                borderPath.lineTo(cx, h + EXTRA_EDGE)
+                borderPath.close()
+
+                if (phaseProgress < 0.5f) {
+                    // waxing: the same path, mirrored about the vertical axis
+                    canvas.save()
+                    canvas.translate(w, 0f)
+                    canvas.scale(-1f, 1f)
+                    canvas.drawPath(borderPath, contrastPaint)
+                    canvas.restore()
+                } else {
+                    canvas.drawPath(borderPath, contrastPaint)
+                }
+            }
+        }
+        canvas.restoreToCount(layer)
+    }
+
+    /** the no-assets path: the two-circle construction, which is at least a phase */
+    private fun drawFlatFallback(canvas: Canvas, w: Float, h: Float) {
         val radius = min(w, h) / 2f - EDGE_INSET
         if (radius <= 0f) return
         val cx = w / 2f
         val cy = h / 2f
-
         litPaint.color = litColor
         shadowPaint.color = shadowColor
-
-        // the lit disc
         canvas.drawCircle(cx, cy, radius, litPaint)
 
-        // the terminator: a second circle offset along x, clipped to the disc
-        val offset = (1f - illuminationFraction * 2f).coerceIn(-1f, 1f) * radius * 2f
-        val direction = if (isWaxing) -1f else 1f
-
-        clipPath.reset()
-        clipPath.addCircle(cx, cy, radius, Path.Direction.CW)
+        val illumination = if (phaseProgress <= 0.5f) phaseProgress * 2f else (1f - phaseProgress) * 2f
+        val offset = (1f - illumination * 2f).coerceIn(-1f, 1f) * radius * 2f
+        val direction = if (phaseProgress < 0.5f) -1f else 1f
+        borderPath.reset()
+        borderPath.addCircle(cx, cy, radius, Path.Direction.CW)
         canvas.save()
-        canvas.clipPath(clipPath)
+        canvas.clipPath(borderPath)
         canvas.drawCircle(cx + offset * direction, cy, radius, shadowPaint)
         canvas.restore()
     }
 
     private companion object {
         const val EDGE_INSET = 2f
+        /** the original's own two constants */
+        const val EXTRA_EDGE = 10f
+        const val BLUR_SIZE = 10f
+        const val CONTRAST_ALPHA = 32
+        const val MAX_TILT = 180f
     }
 }
 

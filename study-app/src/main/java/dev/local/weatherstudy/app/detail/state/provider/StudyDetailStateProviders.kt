@@ -492,18 +492,55 @@ class StudyDetailMoonCardStateProvider @Inject constructor(
         val phaseIndex = weather.currentObservation.condition.indexList
             .firstOrNull { it.type == StudyIndexType.MOON_PHASE }
         val illumination = phaseIndex?.value?.takeIf { it in 0.0..1.0 } ?: 0.0
+        val level = phaseIndex?.level ?: 0
         return StudyDetailMoonCardState(
             isVisible = policyManager.supportMoonCycle() && phaseIndex != null,
             moonriseText = timeNotation.formatClock(time.moonRiseTime, time.ianaTimeZone),
             moonsetText = timeNotation.formatClock(time.moonSetTime, time.ianaTimeZone),
-            phase = phaseIndex?.level ?: 0,
-            phaseText = levelNotation.formatMoonPhase(phaseIndex?.level ?: 0),
+            phase = level,
+            phaseText = levelNotation.formatMoonPhase(level),
             illuminationFraction = illumination.toFloat(),
+            phaseProgress = phaseProgress(level, illumination),
         )
+    }
+
+    /**
+     * `MoonUtils.getPhaseProgress(code, light)`.
+     *
+     * ```java
+     * case 1:       return 0f;                       // new
+     * case 2, 3, 4: return light * 0.5f / 100f;      // waxing  0 .. 0.5
+     * case 6, 7, 8: return 1f - light * 0.5f / 100f; // waning  0.5 .. 1
+     * default:      return 0.5f;                     // full
+     * ```
+     *
+     * The illumination alone cannot give this: it is symmetric about full moon, so a
+     * waxing and a waning crescent of equal brightness are the same number. The PHASE
+     * decides which half of the month the progress falls in, and the illumination
+     * positions it within that half — which is why the original passes both.
+     *
+     * The original's light is a percentage; this gateway's is a fraction, so the /100
+     * is already done.
+     */
+    private fun phaseProgress(level: Int, illumination: Double): Float {
+        val half = (illumination * HALF_CYCLE).toFloat().coerceIn(0f, HALF_CYCLE.toFloat())
+        return when (level) {
+            StudyIndexLevel.MoonPhase.NEW_MOON -> 0f
+            StudyIndexLevel.MoonPhase.WAXING_CRESCENT,
+            StudyIndexLevel.MoonPhase.FIRST_QUARTER,
+            StudyIndexLevel.MoonPhase.WAXING_GIBBOUS,
+            -> half
+            StudyIndexLevel.MoonPhase.WANING_GIBBOUS,
+            StudyIndexLevel.MoonPhase.LAST_QUARTER,
+            StudyIndexLevel.MoonPhase.WANING_CRESCENT,
+            -> 1f - half
+            else -> HALF_CYCLE.toFloat()
+        }
     }
 
     companion object {
         const val MOON = "Moon"
+        private const val HALF_CYCLE = 0.5
     }
 }
 

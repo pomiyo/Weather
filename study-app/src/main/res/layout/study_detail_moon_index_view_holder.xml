@@ -34,15 +34,23 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.5" />
 
+    <!--
+      The icon and the phase name are a PACKED VERTICAL CHAIN with a 0.48 bias, not two
+      views stacked from the top. The bias lifts the pair a hair above centre so the
+      descender of the phase name does not sit on the card's lower edge.
+    -->
     <dev.local.weatherstudy.app.detail.view.StudyMoonPhaseView
         android:id="@+id/moon_icon"
         android:layout_width="@dimen/study_detail_moon_image_size"
         android:layout_height="@dimen/study_detail_moon_image_size"
         android:layout_marginEnd="@dimen/study_detail_moon_icon_margin_end"
-        app:layout_constraintBottom_toBottomOf="@id/moon_horizontal_guideline"
+        app:layout_constraintBottom_toTopOf="@id/moon_state"
         app:layout_constraintEnd_toStartOf="@id/moon_vertical_guideline"
+        app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.48"
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/moon_state"
@@ -54,22 +62,34 @@
         android:gravity="center"
         android:maxLines="2"
         android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.White.11sp"
-        app:layout_constraintEnd_toEndOf="@id/moon_icon"
-        app:layout_constraintStart_toStartOf="@id/moon_icon"
-        app:layout_constraintTop_toBottomOf="@id/moon_icon" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/moon_vertical_guideline"
+        app:layout_constraintTop_toBottomOf="@id/moon_icon"
+        app:layout_constraintVertical_chainStyle="packed" />
 
+    <!--
+      Both label/value pairs hang off the HORIZONTAL GUIDELINE, not off each other.
+
+      Session 4 correction. The four views were chained head to tail - first_title above
+      first_value above second_title above second_value - with nothing anchoring the chain,
+      so the whole column floated to the top of the card and the two values drew on top of
+      one another once they had text to show. The original anchors the first VALUE to the
+      guideline from above and the second TITLE to it from below, and lets each title and
+      value find its partner from there. The pairs then sit either side of the card's
+      midline whatever their content does.
+    -->
     <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/moon_first_title"
         android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/study_detail_moon_first_value_margin_start"
         android:ellipsize="end"
+        android:gravity="start|center"
+        android:maxLines="2"
         android:minHeight="@dimen/study_detail_sun_arc_moon_text_title_min_height"
         android:textAlignment="viewStart"
         android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.11sp"
         app:layout_constraintBottom_toTopOf="@id/moon_first_value"
-        app:layout_constraintStart_toEndOf="@id/moon_vertical_guideline"
-        app:layout_constraintVertical_chainStyle="packed" />
+        app:layout_constraintStart_toStartOf="@id/moon_first_value" />
 
     <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/moon_first_value"
@@ -78,13 +98,13 @@
         android:layout_marginStart="@dimen/study_detail_moon_first_value_margin_start"
         android:layout_marginBottom="@dimen/study_detail_moon_first_value_margin_bottom"
         android:ellipsize="end"
+        android:gravity="start|center"
+        android:maxLines="2"
         android:minHeight="@dimen/study_detail_sun_arc_moon_text_value_min_height"
         android:textAlignment="viewStart"
         android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20sp"
-        app:layout_constraintBottom_toTopOf="@id/moon_second_title"
-        app:layout_constraintStart_toEndOf="@id/moon_vertical_guideline"
-        app:layout_constraintTop_toBottomOf="@id/moon_first_title"
-        app:layout_constraintVertical_chainStyle="packed" />
+        app:layout_constraintBottom_toTopOf="@id/moon_horizontal_guideline"
+        app:layout_constraintStart_toEndOf="@id/moon_vertical_guideline" />
 
     <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/moon_second_title"
@@ -93,26 +113,26 @@
         android:layout_marginStart="@dimen/study_detail_moon_second_title_margin_start"
         android:layout_marginTop="@dimen/study_detail_moon_second_title_margin_top"
         android:ellipsize="end"
+        android:gravity="start|center"
+        android:maxLines="2"
         android:minHeight="@dimen/study_detail_sun_arc_moon_text_title_min_height"
         android:textAlignment="viewStart"
         android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.11sp"
-        app:layout_constraintBottom_toTopOf="@id/moon_second_value"
         app:layout_constraintStart_toEndOf="@id/moon_vertical_guideline"
-        app:layout_constraintTop_toBottomOf="@id/moon_first_value"
+        app:layout_constraintTop_toBottomOf="@id/moon_horizontal_guideline"
         app:layout_constraintVertical_chainStyle="packed" />
 
     <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/moon_second_value"
         android:layout_width="@dimen/study_detail_sun_arc_moon_text_width"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/study_detail_moon_second_title_margin_start"
         android:ellipsize="end"
+        android:gravity="start|center"
+        android:maxLines="2"
         android:minHeight="@dimen/study_detail_sun_arc_moon_text_value_min_height"
         android:textAlignment="viewStart"
         android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/moon_vertical_guideline"
-        app:layout_constraintTop_toBottomOf="@id/moon_second_title"
-        app:layout_constraintVertical_chainStyle="packed" />
+        app:layout_constraintStart_toStartOf="@id/moon_second_title"
+        app:layout_constraintTop_toBottomOf="@id/moon_second_title" />
 
 </dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>
