@@ -207,11 +207,18 @@ internal class StudyGatewayForecastComposer {
                 .put("description", "${windText(wind)} from the ${compass(bearing)}."),
         )
 
-        val visibilityKm = current.optDouble("visibility", 0.0) / METERS_PER_KM
-        result.put(
-            index("visibility", visibilityKm, 0, visibilityText(visibilityKm))
-                .put("description", "Visibility is ${visibilityText(visibilityKm).lowercase(Locale.US)}."),
-        )
+        // A service that does not measure visibility gets NO visibility index, rather than
+        // one reading zero. The detail screen drops a tile whose index is absent and shows
+        // "0 km" for one that is present and zero - and zero visibility is a real reading
+        // (fog), so the two cannot be conflated. MET Norway's locationforecast has no
+        // visibility field at all.
+        if (current.has("visibility")) {
+            val visibilityKm = current.optDouble("visibility", 0.0) / METERS_PER_KM
+            result.put(
+                index("visibility", visibilityKm, 0, visibilityText(visibilityKm))
+                    .put("description", "Visibility is ${visibilityText(visibilityKm).lowercase(Locale.US)}."),
+            )
+        }
 
         result.put(
             index("dewPoint", dewPoint, 0, dewPointText(dewPoint))
@@ -288,18 +295,31 @@ internal class StudyGatewayForecastComposer {
         // 1. the next hour that is likely to be wet, within half a day
         val times = hourly.getJSONArray("time")
         val start = (0 until times.length()).lastOrNull { times.getLong(it) * MILLIS <= now } ?: 0
-        val wetHour = (start until minOf(start + INSIGHT_LOOKAHEAD_HOURS, times.length())).firstOrNull {
-            (hourly.optJSONArray("precipitation_probability").int(it) ?: 0) >= LIKELY_PERCENT
+        // "Likely" means a probability past the threshold OR, for a service that publishes
+        // no probability, an hour that is actually forecast to receive rain. Reading a
+        // missing probability as zero put "No rain expected" over a forecast of 25.7 mm.
+        val window = start until minOf(start + INSIGHT_LOOKAHEAD_HOURS, times.length())
+        val wetHour = window.firstOrNull {
+            val probability = hourly.optJSONArray("precipitation_probability").int(it)
+            if (probability != null) {
+                probability >= LIKELY_PERCENT
+            } else {
+                (hourly.optJSONArray("precipitation").double(it) ?: 0.0) >= WET_HOUR_MM
+            }
         }
         if (wetHour != null) {
-            val chance = hourly.optJSONArray("precipitation_probability").int(wetHour) ?: 0
+            val chance = hourly.optJSONArray("precipitation_probability").int(wetHour)
             val at = hourLabel(times.getLong(wetHour) * MILLIS, timeZone)
             val isSnow = precipType(hourly.optJSONArray("weather_code").int(wetHour) ?: 0, 1.0) == "snow"
             add(
                 if (isSnow) StudyInsightType.SNOW_FALL else StudyInsightType.PRECIPITATION,
                 if (wetHour == start) "${if (isSnow) "Snow" else "Rain"} likely now"
                 else "${if (isSnow) "Snow" else "Rain"} likely around $at",
-                "$chance% chance of precipitation. Consider taking an umbrella.",
+                if (chance != null) {
+                    "$chance% chance of precipitation. Consider taking an umbrella."
+                } else {
+                    "Consider taking an umbrella."
+                },
                 at,
             )
         } else {
@@ -529,6 +549,8 @@ internal class StudyGatewayForecastComposer {
         const val HOURLY_COUNT = 48
         const val INSIGHT_LOOKAHEAD_HOURS = 12
         const val LIKELY_PERCENT = 50
+        /** an hour forecast to receive at least this much is "wet" when no chance is given */
+        const val WET_HOUR_MM = 0.2
         const val FEELS_LIKE_GAP = 3.0
         const val DAY_CHANGE_GAP = 2.0
         const val UV_HIGH = 6.0

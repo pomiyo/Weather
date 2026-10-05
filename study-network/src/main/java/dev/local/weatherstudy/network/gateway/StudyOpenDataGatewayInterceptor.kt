@@ -44,11 +44,13 @@ import org.json.JSONObject
 @Singleton
 class StudyOpenDataGatewayInterceptor @Inject constructor(
     context: Context,
+    private val services: StudyGatewayServiceStore,
 ) : Interceptor {
 
     private val upstream = StudyOpenDataClient()
     private val places = StudyGatewayPlaceIndex(context)
     private val composer = StudyGatewayForecastComposer()
+    private val metNoAdapter = StudyMetNoAdapter()
     private val reverseGeocoder = StudyGatewayReverseGeocoder(context)
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -97,16 +99,45 @@ class StudyOpenDataGatewayInterceptor @Inject constructor(
         }
     }
 
+    /**
+     * One composer, two services.
+     *
+     * MET Norway's response is adapted into Open-Meteo's SHAPE rather than composed
+     * separately, so every rule below this line - the icon vocabulary, the phrases, the
+     * index tiles, the insight cards, the spliced sun columns - runs identically on both.
+     * Switching the service changes the numbers and nothing else, which is the only way
+     * the two are worth comparing.
+     *
+     * MET Norway also sends no air quality, so the AQI card is simply absent there; the
+     * card policies already handle a provider that supplies less.
+     */
     private fun forecast(place: StudyGatewayPlace): String {
-        val weather = upstream.forecast(place.latitude, place.longitude)
-        // air quality is a separate upstream service; a failure there must not fail the forecast
-        val air = runCatching { upstream.airQuality(place.latitude, place.longitude) }.getOrNull()
-        val resolved = place.copy(
-            timeZone = weather.optString("timezone", place.timeZone),
-            utcOffsetSeconds = weather.optInt("utc_offset_seconds", place.utcOffsetSeconds),
-        )
+        val now = System.currentTimeMillis()
+        val service = services.service
+        val weather: JSONObject
+        val air: JSONObject?
+        var resolved = place
+
+        if (service == StudyGatewayService.MET_NORWAY) {
+            val metNo = upstream.metNoForecast(place.latitude, place.longitude)
+            weather = metNoAdapter.toOpenMeteoShape(metNo, place, now)
+            air = null
+        } else {
+            weather = upstream.forecast(place.latitude, place.longitude)
+            // air quality is a separate upstream service; a failure there must not fail the forecast
+            air = runCatching { upstream.airQuality(place.latitude, place.longitude) }.getOrNull()
+            resolved = place.copy(
+                timeZone = weather.optString("timezone", place.timeZone),
+                utcOffsetSeconds = weather.optInt("utc_offset_seconds", place.utcOffsetSeconds),
+            )
+        }
+
         places.put(resolved)
-        return composer.compose(resolved, weather, air, System.currentTimeMillis()).toString()
+        return composer.compose(resolved, weather, air, now)
+            .put("links", JSONObject().put("attribution", service.attributionUrl))
+            .put("providerName", service.id)
+            .put("providerDescription", service.attribution)
+            .toString()
     }
 
     private fun search(query: String, language: String?): String {

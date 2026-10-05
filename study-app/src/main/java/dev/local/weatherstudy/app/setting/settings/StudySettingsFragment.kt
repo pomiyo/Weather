@@ -6,6 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import dev.local.weatherstudy.network.gateway.StudyGatewayService
+import dev.local.weatherstudy.network.gateway.StudyGatewayServiceStore
+import dev.local.weatherstudy.sync.usecase.StudyStartForegroundRefresh
+import dev.local.weatherstudy.sync.usecase.StudyForegroundRefreshRequest
+import kotlinx.coroutines.flow.MutableStateFlow
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
@@ -75,6 +81,12 @@ class StudySettingsFragment : Fragment(R.layout.study_settings_fragment) {
         val display = groups.addCard()
         val unit = display.addRow(R.string.study_settings_unit) { pickUnit() }
         val refresh = display.addRow(R.string.study_settings_auto_refresh) { pickInterval() }
+        // A DEVIATION, and a deliberate one. The original routes between its five backends
+        // by country code (ForecastProvider.dispatchByCountryCode) and never offers the
+        // user a choice. This reconstruction cannot reach any of those, so the same
+        // mechanism points at public keyless services instead - and being able to swap the
+        // source of the numbers is what makes a disagreement with the original readable.
+        val service = display.addRow(R.string.study_settings_service) { pickService() }
 
         val content = groups.addCard()
         content.addRow(R.string.study_settings_activities) {
@@ -101,6 +113,7 @@ class StudySettingsFragment : Fragment(R.layout.study_settings_fragment) {
                     },
                 )
                 refresh.text = state.intervalText
+                service.text = state.service.label
             }
         }
     }
@@ -133,6 +146,26 @@ class StudySettingsFragment : Fragment(R.layout.study_settings_fragment) {
             ) { dialog, which ->
                 viewModel.setInterval(intervals[which])
                 dialog.dismiss()
+            }
+            .show()
+            .anchorLow()
+    }
+
+    private fun pickService() {
+        val services = StudyGatewayService.entries
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.study_settings_service)
+            .setSingleChoiceItems(
+                services.map { it.label }.toTypedArray(),
+                services.indexOf(viewModel.state.value.service).coerceAtLeast(0),
+            ) { dialog, which ->
+                viewModel.setService(services[which])
+                dialog.dismiss()
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.study_settings_service_switched, services[which].label),
+                    Toast.LENGTH_SHORT,
+                ).show()
             }
             .show()
             .anchorLow()
@@ -193,6 +226,7 @@ class StudySettingsFragment : Fragment(R.layout.study_settings_fragment) {
 
 /** Corresponds conceptually to `…setting.settings.state.SettingsState`. */
 data class StudySettingsState(
+    val service: StudyGatewayService = StudyGatewayService.DEFAULT,
     val tempScale: Int = StudyTemperatureNotation.SCALE_CELSIUS,
     val interval: Int = StudySettingValue.AutoRefreshInterval.EVERY_3HOUR,
     val intervalText: String = "",
@@ -205,22 +239,33 @@ class StudySettingsViewModel @Inject constructor(
     private val updateTempScale: StudyUpdateTempScale,
     private val updateAutoRefreshInterval: StudyUpdateAutoRefreshInterval,
     private val startBackgroundRefresh: StudyStartBackgroundRefresh,
+    private val startForegroundRefresh: StudyStartForegroundRefresh,
+    private val services: StudyGatewayServiceStore,
     private val autoRefreshNotation: StudyAutoRefreshNotation,
     private val tracking: StudySettingTracking,
 ) : ViewModel() {
 
+    /** the active service, mirrored into a flow so the row updates the moment it changes */
+    private val activeService = MutableStateFlow(services.service)
+
     val state: StateFlow<StudySettingsState> = combine(
+        activeService,
         settingsRepo.observeTempScale(),
         settingsRepo.observeAutoRefresh(),
         settingsRepo.observeAutoRefreshInterval(),
-    ) { tempScale, autoRefresh, interval ->
+    ) { service, tempScale, autoRefresh, interval ->
         // "off" is stored as a flag beside the interval, and shown as the first interval choice
         val effective = if (autoRefresh == StudySettingValue.OFF) {
             StudySettingValue.AutoRefreshInterval.NONE
         } else {
             interval
         }
-        StudySettingsState(tempScale = tempScale, interval = effective, intervalText = describe(effective))
+        StudySettingsState(
+            service = service,
+            tempScale = tempScale,
+            interval = effective,
+            intervalText = describe(effective),
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), StudySettingsState())
 
     init {
@@ -233,6 +278,23 @@ class StudySettingsViewModel @Inject constructor(
         viewModelScope.launch {
             tracking.onTempScaleChanged(scale)
             updateTempScale(scale)
+        }
+    }
+
+    /**
+     * Switching the service refetches everything, immediately.
+     *
+     * The stored forecast is per location, not per service, so leaving the cache in place
+     * would show one service's numbers under the other's attribution until the next
+     * scheduled refresh - the one state that would make the comparison lie. The refresh is
+     * the same foreground one pull-to-refresh uses, so every saved city is re-fetched, not
+     * just the visible one.
+     */
+    fun setService(service: StudyGatewayService) {
+        viewModelScope.launch {
+            services.service = service
+            activeService.value = service
+            startForegroundRefresh(StudyForegroundRefreshRequest(StudyAutoRefresh.From.SETTING))
         }
     }
 

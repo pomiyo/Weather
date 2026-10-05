@@ -128,6 +128,21 @@ internal class StudyOpenDataClient {
         .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
 
+    /**
+     * MET Norway's forecast.
+     *
+     * Its terms of service require identification rather than a key: a `User-Agent` naming
+     * the application and giving a contact, so the institute can reach whoever is making
+     * the requests. Sending the default OkHttp agent gets a 403, and deservedly - an
+     * anonymous client on a free public service is exactly what the rule is for.
+     */
+    fun metNoForecast(latitude: Double, longitude: Double): JSONObject = get(
+        MET_NO_URL.toHttpUrl().newBuilder()
+            .addQueryParameter("lat", "%.4f".format(latitude))
+            .addQueryParameter("lon", "%.4f".format(longitude))
+            .build(),
+    )
+
     fun forecast(latitude: Double, longitude: Double): JSONObject = get(
         FORECAST_URL.toHttpUrl().newBuilder()
             .addQueryParameter("latitude", latitude.toString())
@@ -161,7 +176,8 @@ internal class StudyOpenDataClient {
     )
 
     private fun get(url: HttpUrl): JSONObject {
-        http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+        val request = Request.Builder().url(url).header("User-Agent", USER_AGENT).build()
+        http.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw IOException("upstream ${url.host} returned ${response.code}")
             val text = response.body?.string() ?: throw IOException("upstream ${url.host} returned no body")
             return JSONObject(text)
@@ -172,6 +188,10 @@ internal class StudyOpenDataClient {
         const val TIMEOUT_SECONDS = 20L
         const val FORECAST_DAYS = "10"
         const val FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+        const val MET_NO_URL = "https://api.met.no/weatherapi/locationforecast/2.0/complete"
+        /** named application + contact, as MET Norway's terms require */
+        const val USER_AGENT = "WeatherStudy/1.0 (educational reconstruction; " +
+            "github.com/pomiyo/Weather)"
         const val AIR_QUALITY_URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
         const val GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
         const val CURRENT_FIELDS = "temperature_2m,relative_humidity_2m,apparent_temperature,is_day," +

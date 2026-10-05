@@ -109,6 +109,8 @@
     <string name="study_search_add_failed">Couldn\'t load the forecast for %1$s</string>
 
     <string name="study_settings_title">Weather settings</string>
+    <string name="study_settings_service">Weather service</string>
+    <string name="study_settings_service_switched">Switched to %1$s. Refreshing…</string>
     <string name="study_settings_unit">Temperature unit</string>
     <string name="study_settings_unit_celsius">Celsius (°C)</string>
     <string name="study_settings_unit_fahrenheit">Fahrenheit (°F)</string>

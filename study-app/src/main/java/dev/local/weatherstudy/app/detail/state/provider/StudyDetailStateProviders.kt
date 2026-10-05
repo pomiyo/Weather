@@ -7,6 +7,7 @@ import dev.local.weatherstudy.domain.entity.weather.StudyHourlyObservation
 import dev.local.weatherstudy.domain.entity.weather.StudyIndex
 import dev.local.weatherstudy.domain.entity.weather.StudyWeather
 import dev.local.weatherstudy.domain.entity.forecast.StudyForecastProvider
+import dev.local.weatherstudy.network.gateway.StudyGatewayServiceStore
 import dev.local.weatherstudy.domain.entity.weather.displayName
 import dev.local.weatherstudy.domain.entity.weather.isCurrentLocation
 import dev.local.weatherstudy.domain.policy.StudyOrderingPolicy
@@ -833,15 +834,27 @@ class StudyDetailBackgroundStateProvider @Inject constructor(
  * The bottom card names where the data comes from. The reconstruction's gateway serves
  * Open-Meteo data, whose licence (CC BY 4.0) requires exactly this attribution.
  */
-class StudyDetailIndicatorStateProvider @Inject constructor() {
-    operator fun invoke(weather: StudyWeather): StudyDetailIndicatorState =
-        StudyDetailIndicatorState(
-            providerName = DATA_SOURCE,
-            feedbackUrl = weather.links[LINK_ATTRIBUTION].orEmpty(),
+class StudyDetailIndicatorStateProvider @Inject constructor(
+    private val services: StudyGatewayServiceStore,
+) {
+    /**
+     * The attribution follows the active service.
+     *
+     * In the original this line is `forecastProviderManager.getActive()` - the provider
+     * attribution is a contractual requirement, not decoration, which is why it has its own
+     * card type and why `GetCardOrder` appends it outside every branch. The same holds for
+     * both services here: Open-Meteo and MET Norway each require naming.
+     */
+    operator fun invoke(weather: StudyWeather): StudyDetailIndicatorState {
+        val service = services.service
+        return StudyDetailIndicatorState(
+            providerName = service.attribution,
+            feedbackUrl = weather.links[LINK_ATTRIBUTION]?.takeIf { it.isNotEmpty() }
+                ?: service.attributionUrl,
         )
+    }
 
     private companion object {
-        const val DATA_SOURCE = "Open-Meteo.com"
         const val LINK_ATTRIBUTION = "attribution"
     }
 }

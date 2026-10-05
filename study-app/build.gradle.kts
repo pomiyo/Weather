@@ -47,6 +47,10 @@ dependencies {
     implementation(project(":study-system-service"))
     implementation(project(":study-system-location"))
     implementation(project(":study-sync"))
+    // the gateway's service store: which public weather service is active. A
+    // reconstruction-only concern, which is why it lives in the gateway package rather
+    // than in the settings table reproduced from the original.
+    implementation(project(":study-network"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
