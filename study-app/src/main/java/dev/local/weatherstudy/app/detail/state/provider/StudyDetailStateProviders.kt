@@ -286,7 +286,7 @@ class StudyDetailIndexCardStateProvider @Inject constructor(
                 graphValue = normalise(type, index.value),
                 graphEntity = if (type == StudyIndexType.UV) UV_BANDS else StudyIndexGraphViewEntity(),
                 directionDegree = index.extra.toFloatOrNull() ?: windNotation.toDegree(index.levelText),
-                webUrl = index.webUrl.ifEmpty { sourceUrl(weather) },
+                webUrl = index.webUrl.ifEmpty { sourceUrl(weather, type) },
             )
         }
         return StudyDetailIndexCardState(isVisible = items.isNotEmpty(), items = items)
@@ -315,21 +315,75 @@ class StudyDetailIndexCardStateProvider @Inject constructor(
     }
 
     /**
-     * Where a tile's tap goes.
+     * Where a tile's tap goes: this place, this measurement.
      *
      * `IndexInnerViewHolder` makes a tile clickable only when its `linkUri` is set, and
-     * opens the FORECAST PROVIDER's page for that measurement. Open-Meteo publishes no
-     * per-index page, so the nearest honest link is its forecast for this location - the
-     * place the number actually came from. A deviation of destination, not of mechanism:
-     * the tile is still clickable iff a link exists, and the link still comes from the
-     * state rather than from the view.
+     * opens the FORECAST PROVIDER's page for THAT measurement - tap the wind tile and you
+     * get the provider's wind page, not its home page. Open-Meteo publishes no consumer
+     * page per index, so the destination is its forecast explorer, which takes the
+     * location and the variable as query parameters and opens with both applied.
+     *
+     * The first version of this was wrong in a way worth recording. It pointed at
+     *
+     *     https://open-meteo.com/en/docs#latitude=10.3&longitude=123.9
+     *
+     * - coordinates in the URL FRAGMENT, and no variable at all. A fragment is never sent
+     * to the page's own parameter parsing, so every tile landed on the same undifferentiated
+     * site: clickable, but pointing nowhere in particular. Verified on the device: as
+     * query parameters the latitude and longitude fields fill in and the named variable's
+     * checkbox is ticked.
+     *
+     * [variableFor] maps each tile to the API variable the gateway itself requested for
+     * that number (`StudyGatewaySupport.CURRENT_FIELDS`), so the page opens on the exact
+     * series the tile is showing a single value from.
      */
-    private fun sourceUrl(weather: StudyWeather): String {
+    private fun sourceUrl(weather: StudyWeather, type: Int): String {
         val lat = weather.location.latitude
         val lon = weather.location.longitude
         val invalid = dev.local.weatherstudy.domain.entity.weather.StudyLocation.INVALID_COORDINATE
         if (lat == invalid && lon == invalid) return ""
-        return "https://open-meteo.com/en/docs#latitude=$lat&longitude=$lon"
+        val variable = variableFor(type) ?: return ""
+        val daily = dailyVariableFor(type)?.let { "&daily=$it" }.orEmpty()
+        return "https://open-meteo.com/en/docs" +
+            "?latitude=${"%.4f".format(lat)}" +
+            "&longitude=${"%.4f".format(lon)}" +
+            "&hourly=$variable" +
+            daily +
+            "&timezone=auto"
+    }
+
+    /**
+     * The daily variable, for the two tiles that show a daily figure rather than a reading.
+     *
+     * The UV tile says "Peaks at 9 today" and the precipitation tile says "16.7 mm /
+     * Today": both are daily aggregates, so the link selects the daily series as well as
+     * the hourly one. It also puts a visible tick on the page for UV, whose hourly
+     * checkbox is inside a collapsed group — verified on the device.
+     */
+    private fun dailyVariableFor(type: Int): String? = when (type) {
+        StudyIndexType.UV -> "uv_index_max"
+        StudyIndexType.PRECIPITATION_AMOUNT -> "precipitation_sum"
+        else -> null
+    }
+
+    /**
+     * The Open-Meteo variable behind each tile.
+     *
+     * These are the same names `StudyGatewaySupport.CURRENT_FIELDS` asks for, which is the
+     * point: the link opens the series the displayed number was taken from, not a
+     * plausible-looking neighbour. `uv_index` sits inside the page's collapsed "Additional
+     * Variables" group, so its checkbox is applied but not visible until that group is
+     * opened; the generated API URL at the top of the page carries it either way.
+     */
+    private fun variableFor(type: Int): String? = when (type) {
+        StudyIndexType.UV -> "uv_index"
+        StudyIndexType.HUMIDITY -> "relative_humidity_2m"
+        StudyIndexType.PRESSURE -> "pressure_msl"
+        StudyIndexType.WIND -> "wind_speed_10m"
+        StudyIndexType.VISIBILITY -> "visibility"
+        StudyIndexType.DEW_POINT -> "dew_point_2m"
+        StudyIndexType.PRECIPITATION_AMOUNT -> "precipitation"
+        else -> null
     }
 
     /** the unit half of the two stacked views inside the wind and pressure dials */
