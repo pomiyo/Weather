@@ -91,12 +91,26 @@ open class StudyIndexInnerViewHolder(itemView: View) :
     protected val title: TextView = itemView.findViewById(R.id.index_title)
     protected val value: TextView = itemView.findViewById(R.id.index_value)
     protected val level: TextView? = itemView.findViewById(R.id.index_level)
+    private val icon: ImageView? = itemView.findViewById(R.id.index_icon)
 
     override fun bind(item: StudyDetailIndexItemState) {
         title.text = item.titleText
         value.text = item.valueText
-        level?.text = item.levelText
-        level?.visibility = if (item.levelText.isEmpty()) View.GONE else View.VISIBLE
+
+        // The big line under the title is the DESCRIPTION, not the level.
+        //
+        // The original's large tiles read "Extreme. Take precaution" and "Lower than
+        // yesterday" there - a sentence at 14sp White 400. This was binding levelText, so
+        // the tiles said "High" and "Very humid": correct data in the wrong slot, and far
+        // too short to fill the 190dp tile, which is what left the dead gap in the middle.
+        val sentence = item.descriptionText.ifEmpty { item.levelText }
+        level?.text = sentence
+        level?.visibility = if (sentence.isEmpty()) View.GONE else View.VISIBLE
+
+        // The 18dp title glyph. The original uses its weather_detail_ic_*_mtrl family,
+        // which this project has no counterpart for, so the slot collapses rather than
+        // holding an 18dp indent in front of every title.
+        icon?.visibility = View.GONE
     }
 }
 

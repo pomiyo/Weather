@@ -201,7 +201,13 @@
     <dimen name="study_detail_large_index_wind_speed_unit_margin_bottom">32dp</dimen>
     <dimen name="study_detail_large_index_wind_padding_bottom">4dp</dimen>
     <dimen name="study_detail_large_index_humidity_graph_height">12dp</dimen>
-    <dimen name="study_detail_large_index_uv_graph_height">12dp</dimen>
+    <!-- the UV bar is 20dp, not 12dp: it carries the value marker, hence the
+         _with_value_height name in the original -->
+    <dimen name="study_detail_large_index_uv_graph_height">20dp</dimen>
+    <dimen name="study_detail_large_index_uv_value_margin_bottom">4dp</dimen>
+    <dimen name="study_detail_large_index_humidity_padding_bottom">24dp</dimen>
+    <dimen name="study_detail_large_index_visibility_padding_bottom">15dp</dimen>
+    <dimen name="study_detail_large_index_dew_point_padding_bottom">15dp</dimen>
     <dimen name="study_detail_large_index_pressure_graph_radius">62dp</dimen>
     <dimen name="study_detail_large_index_pressure_graph_stroke_size">12dp</dimen>
     <dimen name="study_detail_air_quality_card_one_line_height">90dp</dimen>
