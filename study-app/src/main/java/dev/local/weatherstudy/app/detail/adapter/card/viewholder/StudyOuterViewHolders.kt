@@ -98,10 +98,13 @@ class StudyHourlyViewHolder(
 ) : StudyDetailCommonViewHolder(itemView, onAction) {
     override val cardType = StudyDetailCardType.Hourly
     private val list: RecyclerView = itemView.findViewById(R.id.hourly_list)
+    private val narrative: TextView = itemView.findViewById(R.id.hourly_narrative)
+    private val divider: View = itemView.findViewById(R.id.hourly_divider)
     private var adapter: StudyHourlyInnerAdapter? = null
 
     init {
-        setTitle(R.string.study_card_hourly)
+        // No setTitle. The hourly card is the only card on the detail screen with no
+        // title - the narrative sentence occupies that slot instead.
         // each item draws its curve slice outside its own bounds; nothing in the chain may clip
         list.clipChildren = false
         list.itemAnimator = null
@@ -109,6 +112,15 @@ class StudyHourlyViewHolder(
 
     override fun onRender(state: StudyDetailState, item: StudyDetailItemState?) {
         val card = card<StudyDetailHourlyCardState>(state, item) ?: return
+
+        // Narrative and divider go together: a provider with no narrative leaves the strip
+        // flush against the card's top padding, which is why the RecyclerView declares
+        // layout_goneMarginTop=0dp.
+        val hasNarrative = card.narrative.isNotEmpty()
+        narrative.text = card.narrative
+        narrative.visibility = if (hasNarrative) View.VISIBLE else View.GONE
+        divider.visibility = if (hasNarrative) View.VISIBLE else View.GONE
+
         val inner = adapter ?: StudyHourlyInnerAdapter(isRtl = state.configuration.isRtl)
             .also { adapter = it; list.adapter = it }
         inner.submitList(card.items)
@@ -342,23 +354,20 @@ class StudyIndexViewHolder(
     private val adapter = StudyIndexInnerAdapter()
 
     init {
-        // no title and no panel of its own: this card is a grid of tiles, each one a
-        // small card. The two-column grid comes from the layout; it scrolls with the page.
-        title?.visibility = View.GONE
+        // There is no title and no panel. The layout root is a plain ConstraintLayout and
+        // every tile is its own card - see study_detail_index_view_holder.xml.
         itemView.findViewById<RecyclerView>(R.id.index_list).apply {
             isNestedScrollingEnabled = false
             itemAnimator = null
             adapter = this@StudyIndexViewHolder.adapter
-            (layoutManager as? GridLayoutManager)?.let { grid ->
-                // an odd number of tiles: the last one takes the whole row, not half of it
-                grid.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                    override fun getSpanSize(position: Int): Int {
-                        val count = this@StudyIndexViewHolder.adapter.itemCount
-                        return if (count % 2 == 1 && position == count - 1) grid.spanCount else 1
-                    }
-                }
-            }
+            addItemDecoration(StudyIndexGridSpacing(resources))
         }
+
+        // The previous version carried a spanSizeLookup that let an odd final tile take the
+        // whole row. That was this project's invention: the original declares spanCount=2 in
+        // the layout and sets no lookup at all, so an odd tile stays half width and the row
+        // is left half empty. Removed rather than kept, because the "tidier" behaviour is
+        // exactly the kind of difference this reconstruction exists to avoid.
     }
 
     override fun onRender(state: StudyDetailState, item: StudyDetailItemState?) {
@@ -581,3 +590,34 @@ private fun RecyclerView.attachVertical(adapter: RecyclerView.Adapter<*>) {
 /** "● ○ ○" — the original draws a dot indicator; text is the dependency-free equivalent. */
 internal fun pageDots(count: Int, selected: Int): String =
     if (count <= 1) "" else (0 until count).joinToString("") { if (it == selected) "●" else "○" }
+
+/**
+ * The 10dp gutter between index tiles.
+ *
+ * The original gets this from `detail_gap_between_cards`, applied between the AQI stub and
+ * the grid in the layout and between the tiles themselves at the item level. An
+ * ItemDecoration is used here rather than a margin on the tile layout because a margin
+ * would also inset the outer edges, and the grid is already inset by the card list's own
+ * padding - doubling it would push the tiles narrower than the cards above them.
+ */
+private class StudyIndexGridSpacing(resources: android.content.res.Resources) :
+    RecyclerView.ItemDecoration() {
+
+    private val gap = resources.getDimensionPixelSize(R.dimen.study_detail_gap_between_cards)
+
+    override fun getItemOffsets(
+        outRect: android.graphics.Rect,
+        view: View,
+        parent: RecyclerView,
+        state: RecyclerView.State,
+    ) {
+        val position = parent.getChildAdapterPosition(view)
+        if (position == RecyclerView.NO_POSITION) return
+        val spanCount = (parent.layoutManager as? GridLayoutManager)?.spanCount ?: 1
+        val column = position % spanCount
+        // half the gutter on each inner edge, so the pair still spans the full width
+        outRect.left = if (column == 0) 0 else gap / 2
+        outRect.right = if (column == spanCount - 1) 0 else gap / 2
+        if (position >= spanCount) outRect.top = gap
+    }
+}

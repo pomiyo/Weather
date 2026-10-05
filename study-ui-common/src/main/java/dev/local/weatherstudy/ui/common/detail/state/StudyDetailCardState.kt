@@ -35,6 +35,16 @@ sealed interface StudyDetailCardState {
 /** `DetailHourlyCardState` — hosts the bezier temperature curve. */
 data class StudyDetailHourlyCardState(
     override val isVisible: Boolean = true,
+    /**
+     * The forecast sentence above the strip ("Scattered thunderstorms possible. Highs 30
+     * to 32C and lows 22 to 24C.").
+     *
+     * It is NOT a card title. The original's `hourly_narrative` is a two-line
+     * SizeLimitedTextView at Sec.600.White.13sp with a hairline divider under it; the
+     * hourly card is the only card on the screen with no title at all. Gated on
+     * `StudyWeatherPolicy.supportNarrative()`, because not every provider supplies one.
+     */
+    val narrative: String = "",
     val items: List<StudyDetailHourlyItemState> = emptyList(),
     val supportWind: Boolean = false,
 ) : StudyDetailCardState {

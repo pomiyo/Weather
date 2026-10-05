@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- a pill: the corner radius exceeds half of any button height used -->
+<!--
+  The primary pill. The corner radius exceeds half of any button height used.
+
+  Session 3: was a flat #FFFFFFFF. The card token keeps the same "raised surface" reading in
+  light mode and becomes the dark card in night mode, instead of a white slab.
+-->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#33808080">
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="28dp" />
-            <solid android:color="#FFFFFFFF" />
+            <solid android:color="@color/study_oneui_card" />
         </shape>
     </item>
 </ripple>

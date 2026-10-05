@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <corners android:radius="@dimen/study_oneui_card_radius" />
-    <solid android:color="@color/study_oneui_card" />
-</shape>
+<!--
+  Educational reconstruction of detail_card_bg_filled.xml.
+
+  The original is a <ripple> wrapping a rounded <shape> whose solid is col_8_000000,
+  i.e. 8% BLACK (#14000000) - a darkening scrim over the painted background artwork, not
+  a lightening white one. The previous reconstruction used #24FFFFFF at 26dp, which is the
+  wrong colour, the wrong direction and the wrong radius.
+
+  Applied in code by StudyDetailCardConstraintLayout's constructor, not by an
+  android:background attribute - see that class for why.
+-->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="?android:colorControlHighlight">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="@dimen/study_detail_card_radius" />
+            <solid android:color="@color/study_col_8_000000" />
+        </shape>
+    </item>
+</ripple>

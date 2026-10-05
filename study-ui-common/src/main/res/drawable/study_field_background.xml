@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Session 3: the fill was a translucent white, which disappeared against the light search
+  surface and took the hint text with it. The label token is defined for both modes.
+-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <corners android:radius="24dp" />
-    <solid android:color="#26FFFFFF" />
+    <solid android:color="@color/study_oneui_label_background" />
 </shape>

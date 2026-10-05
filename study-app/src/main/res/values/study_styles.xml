@@ -1,70 +1,233 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Educational reconstruction. The original's 50 sesl* theme attributes and its
-     Weather.Theme.* hierarchy are One UI's; these are neutral equivalents. -->
+<!--
+  Educational reconstruction of the original's detail typography.
+
+  Session 3 change: this file previously held 5 invented text appearances
+  (CardTitle/CardValue/CardCaption/CardLargeValue) using `fontFamily` where the original
+  uses `textFontWeight`, and #FFFFFF where the original uses #fafaff. It now reproduces
+  the original's actual inheritance chain, which is the point of the exercise: the style
+  names ARE the specification.
+
+      Weather.TextAppearance.Detail
+        +- .Sec       fontFamily = @string/font_sec     = "sans-serif"
+        |    +- .400 / .600 / .700    android:textFontWeight
+        |         +- .White / .Gray   android:textColor
+        |              +- .13sp ...   android:textSize
+        +- .SecNum    fontFamily = @string/font_sec_num = "clock2019L-RM"
+             +- .400 -> .White -> .50dp | .70dp
+
+  ### The two font families
+
+  `font_sec` resolves to the literal string "sans-serif". It is NOT a bundled asset - on a
+  Samsung device the platform's sans-serif IS One UI Sans, so naming sans-serif here gives
+  the genuine face on the target device and a sane fallback everywhere else.
+
+  `font_sec_num` resolves to "clock2019L-RM", the One UI clock numeral face. It is also not
+  in the APK; it comes from the platform font config. Naming it has the same property: real
+  on a Galaxy, graceful fallback elsewhere. This is the face of the 70dp temperature and is
+  the single most recognisable piece of type on the screen.
+
+  Neither requires copying a font file, so this whole chain is reproducible from values alone.
+
+  ### textFontWeight, not a -medium family name
+
+  The original selects weight with android:textFontWeight (400/600/700), which is API 28+
+  variable-weight selection against one family. Writing `sans-serif-medium` instead, as the
+  previous reconstruction did, picks a different family and lands on a different face.
+
+  See reports/resource-map.md section 1.
+-->
 <resources>
-    <!-- a card's title is a quiet label, not a headline: the content is the headline -->
-    <style name="Study.TextAppearance.CardTitle" parent="TextAppearance.AppCompat">
-        <item name="android:textSize">14sp</item>
-        <item name="android:textColor">#B8FFFFFF</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+
+    <!-- ========== roots ========== -->
+    <style name="Study.TextAppearance.Detail" parent="@android:style/TextAppearance" />
+
+    <style name="Study.TextAppearance.Detail.Sec">
+        <item name="android:fontFamily">@string/study_font_sec</item>
     </style>
-    <style name="Study.TextAppearance.CardValue" parent="TextAppearance.AppCompat">
-        <item name="android:textSize">16sp</item>
-        <item name="android:textColor">#FFFFFFFF</item>
+
+    <style name="Study.TextAppearance.Detail.SecNum">
+        <item name="android:fontFamily">@string/study_font_sec_num</item>
     </style>
-    <style name="Study.TextAppearance.CardCaption" parent="TextAppearance.AppCompat">
-        <item name="android:textSize">13sp</item>
-        <item name="android:textColor">#B8FFFFFF</item>
+
+    <!-- ========== weights ========== -->
+    <style name="Study.TextAppearance.Detail.Sec.400">
+        <item name="android:textFontWeight">400</item>
     </style>
-    <style name="Study.TextAppearance.CardLargeValue" parent="TextAppearance.AppCompat">
-        <item name="android:textSize">40sp</item>
-        <item name="android:textColor">#FFFFFFFF</item>
-        <item name="android:fontFamily">sans-serif-light</item>
+    <style name="Study.TextAppearance.Detail.Sec.600">
+        <item name="android:textFontWeight">600</item>
     </style>
+    <style name="Study.TextAppearance.Detail.Sec.700">
+        <item name="android:textFontWeight">700</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.SecNum.400">
+        <item name="android:textFontWeight">400</item>
+    </style>
+
+    <!-- ========== colours ========== -->
+    <style name="Study.TextAppearance.Detail.Sec.400.White">
+        <item name="android:textColor">@color/study_detail_white_text_color</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.400.Gray">
+        <item name="android:textColor">@color/study_detail_gray_text_color</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White">
+        <item name="android:textColor">@color/study_detail_white_text_color</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.Gray">
+        <item name="android:textColor">@color/study_detail_gray_text_color</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.700.White">
+        <item name="android:textColor">@color/study_detail_white_text_color</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.SecNum.400.White">
+        <item name="android:textColor">@color/study_detail_white_text_color</item>
+    </style>
+
+    <!-- ========== sizes: Sec 400 White ========== -->
+    <style name="Study.TextAppearance.Detail.Sec.400.White.10sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_10_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.400.White.11sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_11_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.400.White.12sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_12_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.400.White.13sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_13_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.400.White.14sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_14_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.400.White.15sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_15_sp</item>
+    </style>
+
+    <!-- ========== sizes: Sec 400 Gray ========== -->
+    <style name="Study.TextAppearance.Detail.Sec.400.Gray.10sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_10_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.400.Gray.11sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_11_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.400.Gray.16dp">
+        <item name="android:textSize">@dimen/study_detail_text_size_16_dp</item>
+    </style>
+
+    <!-- ========== sizes: Sec 600 White ========== -->
+    <style name="Study.TextAppearance.Detail.Sec.600.White.10sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_10_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.12sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_12_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.13sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_13_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.14sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_14_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.15sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_15_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.16sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_16_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.18sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_18_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.20sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_20_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.22sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_22_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.24sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_24_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.20dp">
+        <item name="android:textSize">@dimen/study_detail_text_size_20_dp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.26dp">
+        <item name="android:textSize">@dimen/study_detail_text_size_26_dp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.600.White.34dp">
+        <item name="android:textSize">@dimen/study_detail_text_size_34_dp</item>
+    </style>
+
+    <style name="Study.TextAppearance.Detail.Sec.600.Gray.15sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_15_sp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.Sec.700.White.21sp">
+        <item name="android:textSize">@dimen/study_detail_text_size_21_sp</item>
+    </style>
+
+    <!-- ========== the temperature ========== -->
+    <style name="Study.TextAppearance.Detail.SecNum.400.White.50dp">
+        <item name="android:textSize">@dimen/study_detail_text_size_50_dp</item>
+    </style>
+    <style name="Study.TextAppearance.Detail.SecNum.400.White.70dp">
+        <item name="android:textSize">@dimen/study_detail_text_size_70_dp</item>
+    </style>
+
+    <!-- ========== compatibility aliases ==========
+         56 existing layouts reference these four. They now resolve onto the traced chain
+         rather than carrying their own invented values, so nothing breaks while the
+         layouts are migrated card by card to the named styles above. -->
+    <style name="Study.TextAppearance.CardTitle" parent="Study.TextAppearance.Detail.Sec.600.White.13sp" />
+    <style name="Study.TextAppearance.CardValue" parent="Study.TextAppearance.Detail.Sec.600.White.16sp" />
+    <style name="Study.TextAppearance.CardCaption" parent="Study.TextAppearance.Detail.Sec.400.White.13sp" />
+    <style name="Study.TextAppearance.CardLargeValue" parent="Study.TextAppearance.Detail.SecNum.400.White.50dp" />
 
     <style name="Study.TextAppearance.ToolbarTitle" parent="TextAppearance.AppCompat.Title" />
 
     <!--
-      Corresponds conceptually to the original's per-condition splash themes,
-      Weather.Theme.Splash.{Sunny,SunnyNight,PartlySunnyNight,Cloudy,Rain,Thunderstorm,
-      Cold,Hot,Sandstorm,Sunrise,Sunset}. Each themed splash Activity declares one so the
-      system can draw the right window background before any code runs.
+      The 11 condition splash themes.
+
+      Corresponds to Weather.Theme.Splash.{Sunny,SunnyNight,PartlySunnyNight,Cloudy,Rain,
+      Thunderstorm,Cold,Hot,Sandstorm,Sunrise,Sunset}, each declared by one of the 11
+      DetailSplash*Activity entries in the manifest.
+
+      Session 3 change: these used to point at two-stop XML gradients. The original sets a
+      FLAT COLOUR here (col_splash_detail_bg_gradient_*). The gradient look on the real
+      screen comes later, from the painted 900x900 PNG - not from the window background.
     -->
     <style name="Study.Theme.Splash" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_default</item>
+        <item name="android:windowBackground">@color/study_col_splash_sunny</item>
     </style>
 
     <style name="Study.Theme.Splash.Sunny">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_sunny</item>
+        <item name="android:windowBackground">@color/study_col_splash_sunny</item>
     </style>
     <style name="Study.Theme.Splash.SunnyNight">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_sunny_night</item>
+        <item name="android:windowBackground">@color/study_col_splash_sunny_night</item>
     </style>
     <style name="Study.Theme.Splash.PartlySunnyNight">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_partly_sunny_night</item>
+        <item name="android:windowBackground">@color/study_col_splash_partly_sunny_night</item>
     </style>
     <style name="Study.Theme.Splash.Cloudy">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_cloudy</item>
+        <item name="android:windowBackground">@color/study_col_splash_cloudy</item>
     </style>
     <style name="Study.Theme.Splash.Rain">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_rain</item>
+        <item name="android:windowBackground">@color/study_col_splash_rain</item>
     </style>
     <style name="Study.Theme.Splash.Thunderstorm">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_thunderstorm</item>
+        <item name="android:windowBackground">@color/study_col_splash_thunderstorm</item>
     </style>
     <style name="Study.Theme.Splash.Cold">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_cold</item>
+        <item name="android:windowBackground">@color/study_col_splash_cold</item>
     </style>
     <style name="Study.Theme.Splash.Hot">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_hot</item>
+        <item name="android:windowBackground">@color/study_col_splash_hot</item>
     </style>
     <style name="Study.Theme.Splash.Sandstorm">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_sandstorm</item>
+        <item name="android:windowBackground">@color/study_col_splash_sandstorm</item>
     </style>
     <style name="Study.Theme.Splash.Sunrise">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_sunrise</item>
+        <item name="android:windowBackground">@color/study_col_splash_sunrise</item>
     </style>
     <style name="Study.Theme.Splash.Sunset">
-        <item name="android:windowBackground">@drawable/study_splash_gradient_sunset</item>
+        <item name="android:windowBackground">@color/study_col_splash_sunset</item>
     </style>
 </resources>

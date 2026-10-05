@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of res/xml/scene_detail_header.xml.
+
+  One Transition between two ConstraintSets, linear interpolator, no autoTransition - the
+  progress is driven from code by StudyDetailAppBarOffsetChangedListener as the AppBarLayout
+  scrolls, so the header's state is a continuous function of scroll position rather than a
+  discrete expanded/collapsed flip.
+
+  ### The KeyFrameSet
+
+  Every text view fades to alpha 0 at framePosition 33, i.e. one third of the way through.
+  The effect is that the outgoing arrangement is GONE well before the incoming one arrives,
+  so the two never overlap legibly while they cross the screen. Setting these to 50 would
+  make the texts collide mid-transition; this is a deliberate choice, not a default.
+
+  The temperature is absent from the KeyFrameSet: it never fades, it only moves and is the
+  visual anchor across the whole transition.
+
+  ### start = expanded, end = collapsed
+
+  The START set is the expanded screen in reference-ui/home.png: guideline 172dp from the
+  bottom, everything LEFT aligned in a vertical chain under the temperature at
+  margin-start 23dp, collapse variants at alpha 0.
+
+  The END set is the collapsed toolbar: guideline 50dp, the collapse variants visible and
+  chained BESIDE the temperature against the icon, the expanded ones at alpha 0.
+
+  visibilityMode=ignore on the two icons lets code toggle their visibility without the
+  scene overriding it on the next frame.
+-->
+<MotionScene xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:motion="http://schemas.android.com/apk/res-auto">
+
+    <Transition
+        motion:constraintSetEnd="@+id/study_header_motion_end"
+        motion:constraintSetStart="@+id/study_header_motion_start"
+        motion:motionInterpolator="linear">
+        <KeyFrameSet>
+            <KeyAttribute
+                android:alpha="0.0"
+                motion:framePosition="33"
+                motion:motionTarget="@id/header_high_low" />
+            <KeyAttribute
+                android:alpha="0.0"
+                motion:framePosition="33"
+                motion:motionTarget="@id/header_feels_like" />
+            <KeyAttribute
+                android:alpha="0.0"
+                motion:framePosition="33"
+                motion:motionTarget="@id/header_condition" />
+            <KeyAttribute
+                android:alpha="0.0"
+                motion:framePosition="33"
+                motion:motionTarget="@id/header_date" />
+            <KeyAttribute
+                android:alpha="0.0"
+                motion:framePosition="33"
+                motion:motionTarget="@id/header_high_low_collapse" />
+            <KeyAttribute
+                android:alpha="0.0"
+                motion:framePosition="33"
+                motion:motionTarget="@id/header_feels_like_collapse" />
+            <KeyAttribute
+                android:alpha="0.0"
+                motion:framePosition="33"
+                motion:motionTarget="@id/header_icon" />
+        </KeyFrameSet>
+    </Transition>
+
+    <!-- ==================== EXPANDED ==================== -->
+    <ConstraintSet android:id="@+id/study_header_motion_start">
+
+        <Constraint
+            android:id="@id/info_guide_line"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:orientation="horizontal"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintGuide_end="@dimen/study_detail_top_info_scene_start_guideline_bottom" />
+
+        <Constraint
+            android:id="@id/header_icon"
+            android:layout_width="@dimen/study_detail_top_info_weather_icon_size"
+            android:layout_height="@dimen/study_detail_top_info_weather_icon_size"
+            android:alpha="1.0"
+            android:layout_marginEnd="@dimen/study_detail_top_info_scene_start_icon_margin_end"
+            motion:layout_constraintBottom_toBottomOf="@id/info_guide_line"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintTop_toTopOf="@id/info_guide_line"
+            motion:visibilityMode="ignore" />
+
+        <Constraint
+            android:id="@id/header_temperature"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_start_view_margin_start"
+            motion:layout_constraintBottom_toBottomOf="@id/info_guide_line"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toTopOf="@id/info_guide_line" />
+
+        <!--
+          Expanded: temperature, then condition, then high/low, then feels-like, each
+          hanging off the one above and all left aligned at 23dp.
+
+          Chained TOP-DOWN from the temperature rather than bottom-up from the date. The
+          date is visibility=gone by default, and anchoring the bottom of the chain to a
+          gone view let the whole group collapse to the top of the header - which stacked
+          the feels-like line on top of the temperature. Anchoring downward from a view
+          that is always present keeps the chain stable whatever the date does.
+        -->
+        <Constraint
+            android:id="@id/header_condition"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/study_detail_top_info_scene_start_narrative_margin_top"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_start_view_margin_start"
+            android:layout_marginEnd="@dimen/study_detail_top_info_scene_start_city_layout_margin_end"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/header_temperature" />
+
+        <Constraint
+            android:id="@id/header_high_low"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/study_detail_top_info_scene_start_desc_margin_top"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_start_view_margin_start"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/header_condition" />
+
+        <Constraint
+            android:id="@id/header_feels_like"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/study_detail_top_info_scene_start_feels_like_margin_top"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_start_view_margin_start"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/header_high_low" />
+
+        <!-- the collapsed duplicates are present but invisible -->
+        <Constraint
+            android:id="@id/header_high_low_collapse"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha="0.0"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_end_desc_margin_start"
+            android:layout_marginEnd="@dimen/study_detail_top_info_scene_end_desc_margin_end"
+            motion:layout_constraintBottom_toTopOf="@id/info_guide_line"
+            motion:layout_constraintEnd_toStartOf="@id/header_icon"
+            motion:layout_constraintStart_toEndOf="@id/header_temperature"
+            motion:layout_constraintVertical_chainStyle="packed" />
+
+        <Constraint
+            android:id="@id/header_feels_like_collapse"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha="0.0"
+            android:layout_marginTop="@dimen/study_detail_top_info_scene_start_feels_like_margin_top"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_end_desc_margin_start"
+            android:layout_marginEnd="@dimen/study_detail_top_info_scene_end_desc_margin_end"
+            motion:layout_constraintEnd_toStartOf="@id/header_icon"
+            motion:layout_constraintStart_toEndOf="@id/header_temperature"
+            motion:layout_constraintTop_toBottomOf="@id/info_guide_line"
+            motion:layout_constraintVertical_chainStyle="packed" />
+    </ConstraintSet>
+
+    <!-- ==================== COLLAPSED ==================== -->
+    <ConstraintSet android:id="@+id/study_header_motion_end">
+
+        <Constraint
+            android:id="@id/info_guide_line"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:orientation="horizontal"
+            motion:layout_constraintBottom_toBottomOf="parent"
+            motion:layout_constraintGuide_end="@dimen/study_detail_top_info_scene_end_guideline_bottom" />
+
+        <Constraint
+            android:id="@id/header_icon"
+            android:layout_width="@dimen/study_detail_top_info_weather_icon_size"
+            android:layout_height="@dimen/study_detail_top_info_weather_icon_size"
+            android:alpha="1.0"
+            android:layout_marginEnd="@dimen/study_detail_top_info_scene_end_icon_margin_end"
+            motion:layout_constraintBottom_toBottomOf="@id/info_guide_line"
+            motion:layout_constraintEnd_toEndOf="parent"
+            motion:layout_constraintTop_toTopOf="@id/info_guide_line"
+            motion:visibilityMode="ignore" />
+
+        <Constraint
+            android:id="@id/header_temperature"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_end_view_margin_start"
+            motion:layout_constraintBottom_toBottomOf="@id/info_guide_line"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toTopOf="@id/info_guide_line" />
+
+        <!-- collapsed: the expanded chain fades out... -->
+        <Constraint
+            android:id="@id/header_condition"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.0"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_start_view_margin_start"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/header_temperature" />
+
+        <Constraint
+            android:id="@id/header_high_low"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.0"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_start_view_margin_start"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/header_condition" />
+
+        <Constraint
+            android:id="@id/header_feels_like"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:alpha="0.0"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_start_view_margin_start"
+            motion:layout_constraintStart_toStartOf="parent"
+            motion:layout_constraintTop_toBottomOf="@id/header_high_low" />
+
+        <!-- ...and the collapse chain takes over, beside the temperature -->
+        <Constraint
+            android:id="@id/header_high_low_collapse"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha="1.0"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_end_desc_margin_start"
+            android:layout_marginEnd="@dimen/study_detail_top_info_scene_end_desc_margin_end"
+            motion:layout_constraintBottom_toTopOf="@id/header_feels_like_collapse"
+            motion:layout_constraintEnd_toStartOf="@id/header_icon"
+            motion:layout_constraintStart_toEndOf="@id/header_temperature"
+            motion:layout_constraintTop_toTopOf="@id/info_guide_line"
+            motion:layout_constraintVertical_chainStyle="packed" />
+
+        <Constraint
+            android:id="@id/header_feels_like_collapse"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:alpha="1.0"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_end_desc_margin_start"
+            android:layout_marginEnd="@dimen/study_detail_top_info_scene_end_desc_margin_end"
+            motion:layout_constraintBottom_toBottomOf="@id/info_guide_line"
+            motion:layout_constraintEnd_toStartOf="@id/header_icon"
+            motion:layout_constraintStart_toEndOf="@id/header_temperature"
+            motion:layout_constraintTop_toBottomOf="@id/header_high_low_collapse"
+            motion:layout_constraintVertical_chainStyle="packed" />
+    </ConstraintSet>
+</MotionScene>

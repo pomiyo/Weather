@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of the original's detail-screen colour tokens.
+
+  New in session 3. The reconstruction previously had no named colours at all; every card
+  used literal #FFFFFF / #B8FFFFFF in a style. These are the values traced from the APK's
+  res/values/colors.xml (974 entries, 225 of them `col_*` ramp tokens).
+
+  Two to notice:
+    * detail_white_text_color is #fafaff, not #ffffff. Every white label on the detail
+      screen is very slightly blue. Using pure white is visible side by side.
+    * the card fill is col_8_000000 = #14000000, i.e. 8% BLACK over the background
+      artwork, not a white scrim. That is why cards read as a darker panel on the
+      painted gradient rather than a lighter one.
+
+  See reports/resource-map.md section 2.
+-->
+<resources>
+
+    <!-- ========== detail text ========== -->
+    <color name="study_detail_white_text_color">#fafaff</color>          <!-- detail_white_text_color -->
+    <color name="study_detail_gray_text_color">#b3fafaff</color>         <!-- detail_gray_text_color, 70% of the white -->
+
+    <!-- ========== the black ramp ==========
+         The original expresses every scrim and divider as a percentage of black with the
+         percentage in the resource name. Reproduced verbatim: the names are the
+         documentation. -->
+    <color name="study_col_0_000000">#00000000</color>
+    <color name="study_col_3_000000">#08000000</color>
+    <color name="study_col_5_000000">#0d000000</color>
+    <color name="study_col_8_000000">#14000000</color>
+    <color name="study_col_10_000000">#1a000000</color>
+    <color name="study_col_13_000000">#21000000</color>
+    <color name="study_col_15_000000">#26000000</color>
+    <color name="study_col_20_000000">#33000000</color>
+    <color name="study_col_28_000000">#48000000</color>
+    <color name="study_col_30_000000">#4c000000</color>
+    <color name="study_col_40_000000">#66000000</color>
+
+    <!-- ========== card ========== -->
+    <color name="study_detail_card_gradient_bg">#1a000000</color>
+    <color name="study_detail_card_bg">#fcfcfc</color>                   <!-- light-surface card, locations screen -->
+
+    <!-- ========== hourly ========== -->
+    <color name="study_detail_hourly_divider">#4cffffff</color>
+    <color name="study_detail_hourly_line_expanded">#ffffff</color>
+
+    <!-- ========== splash window backgrounds ==========
+         These are FLAT COLOURS, not gradients. Each of the 11 DetailSplash*Activity
+         themes sets one as android:windowBackground so the system can paint the right
+         colour before any application code runs; the painted 900x900 PNG arrives later,
+         once DetailItemStateProvider has resolved it. The reconstruction previously used
+         two-stop XML gradients here, which is the wrong mechanism and the wrong colour. -->
+    <color name="study_col_splash_sunny">#ff5598e3</color>
+    <color name="study_col_splash_rain">#ff4198c3</color>
+    <color name="study_col_splash_cloudy">#ff385e9a</color>
+    <color name="study_col_splash_thunderstorm">#ff174367</color>
+    <color name="study_col_splash_cold">#ffbec6d7</color>
+    <color name="study_col_splash_hot">#fff68d7b</color>
+    <color name="study_col_splash_sunny_night">#ff121c4c</color>
+    <color name="study_col_splash_partly_sunny_night">#ff2c3358</color>
+    <color name="study_col_splash_sandstorm">#ffc99c77</color>
+    <color name="study_col_splash_sunrise">#ff84bce6</color>
+    <color name="study_col_splash_sunset">#ff4a4c83</color>
+</resources>

@@ -79,8 +79,14 @@ class StudyLocationsDefaultListViewHolder(
         temp.text = row.temperatureText
         cond.text = row.conditionText
         range.text = row.highLowText
+        // getResource, NOT getWhiteResource: this is the one place the distinction in
+        // IconProvider actually bites. The locations list follows the system theme, so in
+        // light mode it needs the _whitebg variant - a glyph on a white disc. The detail
+        // screen's bare white glyph vanishes against the light surface, which is what the
+        // first DayNight build showed.
         icon.setImageResource(
-            dev.local.weatherstudy.ui.common.resource.StudyWeatherIcons.iconRes(row.iconNum),
+            dev.local.weatherstudy.ui.common.resource.StudyIconProvider
+                .getResource(itemView.context, row.iconNum),
         )
         pin.visibility = if (row.isCurrentLocation) View.VISIBLE else View.GONE
         itemView.setOnClickListener { onClick(row.key) }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction of the original's res/values/bools.xml entry.
+
+  android:windowLightStatusBar takes a boolean, so the light/dark decision is expressed as a
+  resource rather than as two themes - which is why the original has one base theme and a
+  values-night override rather than a Light and a Dark variant.
+-->
+<resources>
+    <bool name="study_window_light_status_bar">true</bool>
+</resources>

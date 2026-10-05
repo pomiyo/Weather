@@ -118,4 +118,22 @@
     <string name="study_licences_body">Weather and geocoding data\nOpen-Meteo.com — CC BY 4.0. Geocoding data from GeoNames — CC BY 4.0.\n\nToolbar glyphs\nMaterial Symbols — Apache License 2.0.\n\nLibraries\nAndroidX (core, appcompat, fragment, recyclerview, viewpager2, constraintlayout, coordinatorlayout, swiperefreshlayout, navigation, lifecycle, room, work, datastore, startup, glance) — Apache License 2.0\nMaterial Components for Android — Apache License 2.0\nKotlin and kotlinx.coroutines — Apache License 2.0\nDagger and Hilt — Apache License 2.0\nRetrofit, OkHttp and Moshi — Apache License 2.0\nOrbit MVI — Apache License 2.0\nCoil — Apache License 2.0\nGoogle Play services location — Android Software Development Kit License\n\nThe weather icons and all other drawings in this app are original to this project.</string>
     <string name="study_activities_title">Activities</string>
     <string name="study_activities_body">Activity forecasts (running, golf, driving and the like) are a capability of specific weather providers. The provider in use does not supply them, so there is nothing to choose here.</string>
+
+    <!--
+      Font family names, mirroring the original's @string/font_sec and @string/font_sec_num.
+
+      The original declares its typefaces as STRINGS, not font resources, because both are
+      resolved from the platform font config rather than bundled in the APK:
+
+        font_sec     = "sans-serif"      - on a Galaxy device the platform sans-serif is
+                                           One UI Sans, so this yields the genuine face on
+                                           the target device and a sane fallback elsewhere.
+        font_sec_num = "clock2019L-RM"   - the One UI clock numeral face, used for the 70dp
+                                           and 50dp temperature. Also not in the APK.
+
+      Keeping them as strings is what makes the whole typography chain reproducible without
+      copying any font asset. See reports/resource-map.md section 1.
+    -->
+    <string name="study_font_sec" translatable="false">sans-serif</string>
+    <string name="study_font_sec_num" translatable="false">clock2019L-RM</string>
 </resources>

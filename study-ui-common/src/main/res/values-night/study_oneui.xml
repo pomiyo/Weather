@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Educational reconstruction: the NIGHT half of the One UI surface palette.
+
+  The original keeps the same split - res/values-night/colors.xml overrides
+  col_common_bg_color, col_common_contents_bg_color, primary_text_color and the
+  locations_add_label_type_* pair, and res/values-night/bools.xml flips
+  window_light_status_bar to false.
+
+  Note how little is overridden: the accent (#387aff) is the same in both modes, and so is
+  the shape and spacing vocabulary. Only the surfaces and the text invert. That is the whole
+  mechanism behind the light locations screen and the dark one - there is no second theme.
+-->
+<resources>
+    <color name="study_oneui_background">#010102</color>
+    <color name="study_oneui_card">#17171a</color>
+    <color name="study_oneui_card_pressed">#1fffffff</color>
+    <color name="study_oneui_divider">#1fffffff</color>
+    <color name="study_oneui_text_primary">#fafafa</color>
+    <color name="study_oneui_text_secondary">#b3ffffff</color>
+    <color name="study_oneui_accent">#387aff</color>
+    <color name="study_oneui_dialog">#17171a</color>
+    <color name="study_oneui_label_background">#3a3a3d</color>
+    <color name="study_oneui_label_text">#a3a3ad</color>
+</resources>

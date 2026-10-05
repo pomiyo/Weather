@@ -51,6 +51,11 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
+    // The original's weather artwork is Lottie: 30 white + 30 dark icon animations and 37
+    // full-screen illustrations, all in assets/. com.airbnb.lottie.LottieAnimationView
+    // appears three times in the original's own layouts, so this is the same library the
+    // original uses rather than a substitution.
+    implementation(libs.lottie)
     implementation(libs.androidx.coordinatorlayout)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.viewpager2)

@@ -10,9 +10,11 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
+import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import androidx.viewpager2.widget.ViewPager2
+import com.airbnb.lottie.LottieAnimationView
 import com.google.android.material.appbar.AppBarLayout
 import dev.local.weatherstudy.app.R
 import dev.local.weatherstudy.app.detail.adapter.card.StudyDetailAdapter
@@ -59,6 +61,8 @@ class StudyDetailRenderer(
     private val appBar: AppBarLayout = root.findViewById(R.id.app_bar)
     private val collapsibleToolbar: StudyCollapsibleToolbar = root.findViewById(R.id.collapsible_toolbar)
     private val headerPager: ViewPager2 = root.findViewById(R.id.header_pager)
+    private val illustration: LottieAnimationView = root.findViewById(R.id.icon_illust)
+    private var shownIllustrationAsset: String = ""
     private val pageIndicator: TextView = root.findViewById(R.id.header_page_indicator)
     private val toolbarContainer: View = root.findViewById(R.id.toolbar_container)
     private val toolbarCity: TextView = root.findViewById(R.id.toolbar_city)
@@ -109,9 +113,14 @@ class StudyDetailRenderer(
      */
     private fun setUpCollapse() {
         collapsibleToolbar.onCollapseProgressChanged = { collapse ->
-            headerPager.alpha = 1f - collapse
+            // The header page is a MotionLayout, so collapsing is a scene transition rather
+            // than a fade of the whole pager. Fading the pager (which the previous version
+            // did) would hide the collapsed arrangement too, since both arrangements live
+            // inside the same page.
+            applyHeaderCollapse(collapse)
             pageIndicator.alpha = 1f - collapse
-            toolbarCity.alpha = ((collapse - TITLE_FADE_START) / (1f - TITLE_FADE_START)).coerceIn(0f, 1f)
+            // The toolbar city does NOT fade in on collapse: it is visible throughout, and
+            // is the one element that does not move between the two header states.
         }
         appBar.addOnOffsetChangedListener(
             StudyDetailAppBarOffsetChangedListener(collapsibleToolbar) { },
@@ -120,6 +129,50 @@ class StudyDetailRenderer(
             toolbarContainer.translationY = -verticalOffset.toFloat()
             // pull-to-refresh belongs to the fully expanded header only
             swipeRefresh.isHeaderExpanded = verticalOffset == 0
+        }
+    }
+
+    /**
+     * Pushes the collapse progress into every laid-out header page.
+     *
+     * ViewPager2 keeps the neighbouring pages alive off-screen, and a page that scrolls in
+     * mid-collapse must already be in the right state - so this sets progress on all of
+     * them rather than only the current one. Reaching them through the pager's inner
+     * RecyclerView is the supported route; ViewPager2 exposes no page-view accessor.
+     */
+    private fun applyHeaderCollapse(progress: Float) {
+        val clamped = progress.coerceIn(0f, 1f)
+
+        // The page fades over the BACK HALF of the collapse, on top of the scene transition.
+        //
+        // At full collapse the original shows the city and nothing else - see
+        // reference-ui/home-scroll-2.png, where the temperature, condition, high/low and
+        // feels-like have all gone and only the pinned toolbar remains. The scene alone
+        // does not produce that: it restacks the header into its collapsed arrangement but
+        // keeps it visible, and because the toolbar is counter-translated to stay pinned
+        // while its parent scrolls, the collapsed arrangement ends up drawn across the
+        // toolbar and the status bar.
+        //
+        // Fading the page out over the second half gives the observed behaviour while
+        // keeping the restacking visible through the first half, which is where it reads.
+        val alpha = ((1f - clamped) / (1f - PAGE_FADE_START)).coerceIn(0f, 1f)
+
+        // The illustration fades on the same curve.
+        //
+        // It is a sibling of the scrolling content rather than a child of the header, so it
+        // does not move when the list scrolls - without this it would stay pinned in the
+        // top-right corner and show through the translucent cards as they pass over it.
+        // reference-ui/home-scroll-1.png settles the question: once the original is scrolled
+        // the figure is completely gone, not dimmed behind the cards, so it is faded rather
+        // than merely layered underneath.
+        illustration.alpha = alpha
+
+        val inner = headerPager.getChildAt(0) as? RecyclerView ?: return
+        for (i in 0 until inner.childCount) {
+            (inner.getChildAt(i) as? MotionLayout)?.let { page ->
+                page.progress = clamped
+                page.alpha = alpha
+            }
         }
     }
 
@@ -208,19 +261,66 @@ class StudyDetailRenderer(
         toolbarCity.text = ""
     }
 
-    /** the condition's gradient — the same pair the matching splash theme uses */
+    /**
+     * The two artwork layers behind the screen.
+     *
+     * The original composes four: the painted background, the hero illustration, the
+     * MotionLayout header and the translucent card list. This renders the first two; the
+     * other two are view hierarchy and are already in place.
+     *
+     * Layer 1, the background, is one of eleven painted 900x900 images resolved by
+     * `StudyBackgroundProvider`. It is NOT a gradient despite the resource name - the
+     * two-stop GradientDrawable below is only the fallback for a tree without the local
+     * study assets, and it is deliberately kept rather than removed so the project still
+     * builds and runs for someone who clones it.
+     *
+     * Layer 2, the illustration, is a Lottie composition loaded from assets by path.
+     * `setAnimation` throws nothing when the asset is missing - it fails asynchronously
+     * onto the failure listener - so the view is hidden up front and only shown once the
+     * composition has actually loaded.
+     */
     private fun renderBackground(background: StudyDetailBackgroundState) {
-        if (background == shownBackground || background.gradientStartColor == 0) return
+        if (background == shownBackground) return
         shownBackground = background
-        root.background = GradientDrawable(
-            GradientDrawable.Orientation.TOP_BOTTOM,
-            intArrayOf(background.gradientStartColor, background.gradientEndColor),
-        )
+
+        if (background.artworkResId != 0) {
+            root.setBackgroundResource(background.artworkResId)
+        } else if (background.gradientStartColor != 0) {
+            root.background = GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                intArrayOf(background.gradientStartColor, background.gradientEndColor),
+            )
+        }
+
+        renderIllustration(background.illustrationAsset)
+    }
+
+    private fun renderIllustration(assetPath: String) {
+        if (assetPath.isEmpty()) {
+            illustration.visibility = View.GONE
+            illustration.cancelAnimation()
+            return
+        }
+        if (assetPath == shownIllustrationAsset) return
+        shownIllustrationAsset = assetPath
+
+        illustration.visibility = View.GONE
+        illustration.setFailureListener {
+            // the local study assets are not present in this tree; the screen is still valid
+            illustration.visibility = View.GONE
+        }
+        illustration.addLottieOnCompositionLoadedListener {
+            illustration.visibility = View.VISIBLE
+            illustration.playAnimation()
+        }
+        illustration.setAnimation(assetPath)
     }
 
     private companion object {
         const val ITEM_VIEW_CACHE_SIZE = 8
         const val TITLE_FADE_START = 0.6f
+        /** the collapse fraction at which the header page starts to fade out */
+        const val PAGE_FADE_START = 0.5f
         const val SPINNER_COLOR = 0xFF1C313A.toInt()
     }
 }

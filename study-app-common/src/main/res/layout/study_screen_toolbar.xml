@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- tint note -->
+<!--
+  The action glyphs are tinted from the theme, not left to the vector's own fill.
+
+  study_ic_back and friends are drawn with fillColor #FFFFFFFF because they were written
+  when every screen in this project was dark. Now that the theme is DayNight, a baked-in
+  white glyph disappears against the light locations surface - which is exactly what the
+  first DayNight build looked like. app:tint lets one drawable serve both modes, which is
+  what the original does too.
+-->
 <!--
   Educational reconstruction of the One UI screen header: a row of actions over a large
   title. The original gets a COLLAPSING version of this from the SESL AppBarLayout fork;
   the plain screens here are short enough that a fixed one reads the same.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/screen_toolbar"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -23,7 +34,8 @@
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/study_action_back"
-            android:src="@drawable/study_ic_back" />
+            android:src="@drawable/study_ic_back"
+            app:tint="@color/study_oneui_text_primary" />
 
         <View
             android:layout_width="0dp"
@@ -36,7 +48,8 @@
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@null"
-            android:visibility="gone" />
+            android:visibility="gone"
+            app:tint="@color/study_oneui_text_primary" />
 
         <ImageButton
             android:id="@+id/screen_action_primary"
@@ -44,7 +57,8 @@
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@null"
-            android:visibility="gone" />
+            android:visibility="gone"
+            app:tint="@color/study_oneui_text_primary" />
     </LinearLayout>
 
     <TextView

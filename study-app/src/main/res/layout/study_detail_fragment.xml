@@ -17,6 +17,37 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!--
+      The hero illustration.
+
+      Corresponds to @id/icon_illust in fragment_detail_viewpager_item.xml. Two properties
+      of the original are reproduced and both matter:
+
+        * it is a SIBLING of the scrolling content, not a child of the header, so it stays
+          pinned while the cards scroll over the background;
+        * it is anchored top|end at a fixed 360x260dp, which is why the figure sits in the
+          top-right corner of reference-ui/home.png and does not move on scroll.
+
+      It is declared BEFORE the app bar so it draws underneath the header's text. Lottie
+      settings match the original's attributes: autoPlay, infinite repeat, restart mode,
+      and applyOpacityToLayers/applyShadowToLayers, which these compositions need in order
+      to render their soft shadows correctly.
+
+      LOCAL STUDY RESOURCE - the animation is loaded by asset path at bind time and the view
+      stays GONE when the assets are absent. DO NOT REDISTRIBUTE.
+    -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/icon_illust"
+        android:layout_width="@dimen/study_detail_top_info_weather_illustration_width"
+        android:layout_height="@dimen/study_detail_top_info_weather_illustration_height"
+        android:layout_gravity="top|end"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        app:lottie_applyOpacityToLayers="true"
+        app:lottie_applyShadowToLayers="true"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true" />
+
     <include layout="@layout/study_detail_app_bar_layout" />
 
     <dev.local.weatherstudy.app.detail.view.StudyDetailSwipeRefresh

@@ -5,6 +5,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import dev.local.weatherstudy.app.R
+import dev.local.weatherstudy.ui.common.resource.StudyIconProvider
 import dev.local.weatherstudy.app.detail.view.*
 import dev.local.weatherstudy.domain.type.StudyIndexType
 import dev.local.weatherstudy.ui.common.detail.state.*
@@ -33,8 +34,12 @@ class StudyHourlyInnerViewHolder(
     private val time: TextView = itemView.findViewById(R.id.hourly_time)
     private val icon: ImageView = itemView.findViewById(R.id.hourly_icon)
     private val precip: TextView = itemView.findViewById(R.id.hourly_precipitation)
+    private val precipLayout: View = itemView.findViewById(R.id.hourly_precipitation_layout)
     private val graph: StudyBezierLineGraphItemView = itemView.findViewById(R.id.hourly_graph)
     private val temp: TextView = itemView.findViewById(R.id.hourly_temperature)
+    private val sun: TextView = itemView.findViewById(R.id.hourly_sun)
+    private val windLayout: View = itemView.findViewById(R.id.hourly_wind_layout)
+    private val windText: TextView = itemView.findViewById(R.id.hourly_wind_text)
     private val wind: StudyWindGraph = itemView.findViewById(R.id.hourly_wind)
 
     override fun bind(item: StudyDetailHourlyItemState) {
@@ -42,7 +47,10 @@ class StudyHourlyInnerViewHolder(
         temp.text = item.temperatureText
         precip.text = item.precipitationText
         precip.visibility = if (item.precipitationText.isEmpty()) View.GONE else View.VISIBLE
-        icon.setImageResource(dev.local.weatherstudy.ui.common.resource.StudyWeatherIcons.iconRes(item.iconNum))
+        // getWhiteResource, not getResource: the detail cards sit on dark painted artwork
+        // whatever the system theme is doing, so the white-disc variant would show a disc
+        // against the sky. This is why the original exposes the two separately.
+        icon.setImageResource(StudyIconProvider.getWhiteResource(itemView.context, item.iconNum))
 
         // the three ratios are what make the curve continuous across item boundaries
         graph.currentRatio = item.temperatureRatio
@@ -54,11 +62,27 @@ class StudyHourlyInnerViewHolder(
         graph.isRtl = isRtl
         graph.showDebugPoints = showDebugPoints
 
-        // wind has its own tile in the details grid; a compass under every hour is noise
-        wind.visibility = View.GONE
-        precip.visibility = View.VISIBLE
-        precip.alpha = if (item.precipitationText.isEmpty()) 0f else 1f
-    }}
+        // The sun label overlays the temperature at sunrise/sunset rather than replacing its
+        // text, so the two can carry different text appearances - see the layout's note 2.
+        sun.visibility = View.GONE
+        temp.visibility = View.VISIBLE
+
+        // The whole precipitation row goes, not just its text: hiding the label alone would
+        // leave the droplet glyph floating under an empty hour.
+        precipLayout.visibility =
+            if (item.precipitationText.isEmpty()) View.INVISIBLE else View.VISIBLE
+
+        // Wind is opt-in per provider (StudyWeatherPolicy.supportWind); when it is off the
+        // whole deco block is gone so the cells keep their natural height.
+        if (item.windText.isEmpty()) {
+            windLayout.visibility = View.GONE
+        } else {
+            windLayout.visibility = View.VISIBLE
+            windText.text = item.windText
+            wind.directionDegree = item.windDirectionDegree
+        }
+    }
+}
 
 /** `IndexInnerViewHolder` — the base row the four graph-bearing variants extend. */
 open class StudyIndexInnerViewHolder(itemView: View) :
@@ -263,7 +287,10 @@ class StudyDailyInnerViewHolder(itemView: View) :
         day.alpha = 1f
         low.text = item.lowText
         high.text = item.highText
-        icon.setImageResource(dev.local.weatherstudy.ui.common.resource.StudyWeatherIcons.iconRes(item.iconNum))
+        // getWhiteResource, not getResource: the detail cards sit on dark painted artwork
+        // whatever the system theme is doing, so the white-disc variant would show a disc
+        // against the sky. This is why the original exposes the two separately.
+        icon.setImageResource(StudyIconProvider.getWhiteResource(itemView.context, item.iconNum))
         range.lowRatio = item.lowRatio
         range.highRatio = item.highRatio
         range.todayMarkerRatio = if (item.isToday) item.highRatio else Float.NaN

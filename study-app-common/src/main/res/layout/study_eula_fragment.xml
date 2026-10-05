@@ -60,7 +60,7 @@
             android:background="@drawable/study_button_background"
             android:text="@string/study_eula_decline"
             android:textAllCaps="false"
-            android:textColor="#FFFFFFFF"
+            android:textColor="@color/study_oneui_text_primary"
             android:textSize="16sp" />
 
         <Button
@@ -73,7 +73,7 @@
             android:background="@drawable/study_button_primary_background"
             android:text="@string/study_eula_agree"
             android:textAllCaps="false"
-            android:textColor="#FF1C313A"
+            android:textColor="@color/study_oneui_text_primary"
             android:textSize="16sp" />
     </LinearLayout>
 </LinearLayout>

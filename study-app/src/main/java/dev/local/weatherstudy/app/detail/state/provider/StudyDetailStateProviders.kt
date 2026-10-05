@@ -19,6 +19,17 @@ import dev.local.weatherstudy.ui.common.detail.state.StudyDetailAlertCardState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailAlertItemState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailBackgroundState
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailCardState
+// Aliased because two things in this project answer to "background provider":
+//   * ui.common.resource.StudyBackgroundProvider - this project's own invention, a pair of
+//     fallback gradient colours, injected below as `backgroundProvider`;
+//   * app.common.resource.StudyBackgroundProvider - the reconstruction of the original's
+//     BackgroundProvider, which resolves the painted artwork.
+// The original has only the second. The first exists because the reconstruction had no
+// artwork to resolve until now, and is kept as the no-assets fallback path.
+import dev.local.weatherstudy.app.common.resource.StudyBackgroundProvider as StudyBackgroundArtworkProvider
+import dev.local.weatherstudy.app.common.resource.StudyIllustrationProvider
+import dev.local.weatherstudy.app.detail.usecase.StudyGetCardOrder
+import dev.local.weatherstudy.app.detail.usecase.StudyGetColumnSize
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailCardType
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailConfiguration
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailDailyCardState
@@ -137,6 +148,11 @@ class StudyDetailHourlyCardStateProvider @Inject constructor(
         }
         return StudyDetailHourlyCardState(
             isVisible = true,
+            narrative = if (policyManager.supportNarrative()) {
+                weather.currentObservation.condition.narrative
+            } else {
+                ""
+            },
             items = items,
             supportWind = policyManager.supportWind(),
         )
@@ -570,11 +586,25 @@ class StudyDetailBackgroundStateProvider @Inject constructor(
         val iconNum = weather.currentObservation.condition.iconNum
         val isDay = weather.currentObservation.time.isDayOrNight == StudyForecastTime.DAY
         val (start, end) = backgroundProvider.getGradientColors(iconNum, isDay)
+
+        // The two artwork layers. Both are LOCAL STUDY RESOURCES and both degrade to a
+        // neutral value when absent, so a clone without them still renders a usable screen -
+        // the artwork resolves to 0 and the gradient pair above takes over, and the
+        // illustration resolves to an empty path and simply is not shown.
+        val artwork = StudyBackgroundArtworkProvider.getBackground(iconNum, isDay)
+        val illustration = StudyIllustrationProvider.resolve(
+            iconNum = iconNum,
+            temperatureCelsius = weather.currentObservation.condition.temperature,
+        )
+
         return StudyDetailBackgroundState(
             conditionCode = iconNum,
             isDay = isDay,
             gradientStartColor = start,
             gradientEndColor = end,
+            artworkResId = artwork.resId,
+            illustrationAsset = illustration.assetPath,
+            illustrationAspectRatio = illustration.aspectRatio,
         )
     }
 }
@@ -618,6 +648,8 @@ class StudyDetailItemStateListProvider @Inject constructor(
     private val indexProvider: StudyDetailIndexCardStateProvider,
     private val sunProvider: StudyDetailSunCardStateProvider,
     private val moonProvider: StudyDetailMoonCardStateProvider,
+    private val getCardOrder: StudyGetCardOrder,
+    private val getColumnSize: StudyGetColumnSize,
 ) {
     operator fun invoke(weather: StudyWeather, tempScale: Int): StudyDetailItemState {
         val cardStates = buildMap<StudyDetailCardType, StudyDetailCardState> {
@@ -635,22 +667,24 @@ class StudyDetailItemStateListProvider @Inject constructor(
                 StudyDetailIndicatorCardState(indicator = indicatorProvider(weather)),
             )
         }
-        return StudyDetailItemState(
+        // The order has to be computed from the assembled state, so the item state is built
+        // first and the order folded in afterwards. The original does the same: GetCardOrder
+        // takes the DetailItemState as a parameter, which is only possible once every card
+        // state exists.
+        val itemState = StudyDetailItemState(
             key = weather.location.key,
             topInfo = topInfoProvider(weather, tempScale),
             background = backgroundProvider(weather),
             indicator = indicatorProvider(weather),
             cardStates = cardStates,
-            cardSortedList = sortCards(cardStates),
+        )
+        return itemState.copy(
+            cardSortedList = getCardOrder(
+                itemState = itemState,
+                columnSize = getColumnSize(),
+            ),
         )
     }
-
-    private fun sortCards(
-        cardStates: Map<StudyDetailCardType, StudyDetailCardState>,
-    ): List<StudyDetailCardType> =
-        StudyOrderingPolicy.DEFAULT_DETAIL_CARD_ORDER
-            .mapNotNull { StudyDetailCardType.fromName(it) }
-            .filter { cardStates[it]?.isVisible == true }
 }
 
 /**

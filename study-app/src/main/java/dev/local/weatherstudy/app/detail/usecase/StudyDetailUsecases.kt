@@ -5,6 +5,7 @@ import dev.local.weatherstudy.domain.policy.StudyOrderingPolicy
 import dev.local.weatherstudy.domain.repo.StudySettingsRepo
 import dev.local.weatherstudy.system.service.StudySystemService
 import dev.local.weatherstudy.ui.common.detail.state.StudyDetailCardType
+import dev.local.weatherstudy.ui.common.detail.state.StudyDetailItemState
 import javax.inject.Inject
 
 /**
@@ -77,19 +78,133 @@ class StudyGetContentAreaWidthImpl @Inject constructor(
 /**
  * `GetCardOrder(+Impl)`.
  *
- * Observed responsibility: the order is read from the **policy** package, then filtered.
- * The original lets a user setting and the provider's capabilities both narrow it, which
- * is why it is a use case and not a constant list in the adapter.
+ * Session 3 rewrite. This previously returned a static list from a policy constant:
+ *
+ * ```kotlin
+ * StudyOrderingPolicy.DEFAULT_DETAIL_CARD_ORDER.mapNotNull { StudyDetailCardType.fromName(it) }
+ * ```
+ *
+ * The original takes four parameters and branches about fifteen times. The order is not a
+ * constant that gets filtered - it is **computed**, and three of its properties are only
+ * visible once it is written out properly:
+ *
+ * 1. **The column count reorders the middle of the list.** In one column the order is
+ *    Insight, Daily, LifeStyle, Index. In two it is Insight, Index, Daily, LifeStyle,
+ *    because Index pairs beside Insight instead of following the others. The same data
+ *    produces a different sequence purely from device geometry.
+ * 2. **Sun and Moon collapse into one card when both are present.** They are not two cards
+ *    that happen to sit together; SunAndMoon is a third card type with its own view holder
+ *    hosting both Canvas views.
+ * 3. **Indicator is appended unconditionally**, outside every branch. The provider
+ *    attribution is the one thing that cannot be scrolled away from.
+ *
+ * ### A faithfully reproduced oddity
+ *
+ * The BottomIndex and LifeTips steps each have an if/else whose two arms are identical -
+ * both add the same card. That is what the decompiled bytecode does; it is dead branching
+ * left behind by a refactor in the original. It is kept here, with the condition intact,
+ * because the brief is to reproduce the original's shape rather than a tidied version of
+ * it. Collapsing it would be the obvious "improvement" and would lose the evidence.
+ *
+ * See reports/detail-view-types.md section 4.
  */
 interface StudyGetCardOrder {
-    suspend operator fun invoke(): List<StudyDetailCardType>
+    operator fun invoke(
+        itemState: StudyDetailItemState,
+        columnSize: Int,
+        isSmartThingsShown: Boolean = false,
+    ): List<StudyDetailCardType>
 }
 
-class StudyGetCardOrderImpl @Inject constructor(
-    private val settingsRepo: StudySettingsRepo,
-) : StudyGetCardOrder {
-    override suspend fun invoke(): List<StudyDetailCardType> =
-        StudyOrderingPolicy.DEFAULT_DETAIL_CARD_ORDER.mapNotNull { StudyDetailCardType.fromName(it) }
+class StudyGetCardOrderImpl @Inject constructor() : StudyGetCardOrder {
+
+    private fun StudyDetailItemState.isVisible(type: StudyDetailCardType): Boolean =
+        cardStates[type]?.isVisible == true
+
+    override fun invoke(
+        itemState: StudyDetailItemState,
+        columnSize: Int,
+        isSmartThingsShown: Boolean,
+    ): List<StudyDetailCardType> {
+        val order = mutableListOf<StudyDetailCardType>()
+
+        if (itemState.isVisible(StudyDetailCardType.Alert)) order += StudyDetailCardType.Alert
+        if (itemState.isVisible(StudyDetailCardType.Hourly)) order += StudyDetailCardType.Hourly
+        if (itemState.isVisible(StudyDetailCardType.Precipitation)) {
+            order += StudyDetailCardType.Precipitation
+        }
+
+        // the column-count branch: see point 1 in the class doc
+        if (columnSize == 1) {
+            if (itemState.isVisible(StudyDetailCardType.Insight)) order += StudyDetailCardType.Insight
+            if (itemState.isVisible(StudyDetailCardType.Daily)) order += StudyDetailCardType.Daily
+            if (itemState.isVisible(StudyDetailCardType.LifeStyle)) order += StudyDetailCardType.LifeStyle
+            if (itemState.isVisible(StudyDetailCardType.Index)) order += StudyDetailCardType.Index
+        } else {
+            if (itemState.isVisible(StudyDetailCardType.Insight)) {
+                order += StudyDetailCardType.Insight
+                order += StudyDetailCardType.Index
+                order += StudyDetailCardType.Daily
+                if (itemState.isVisible(StudyDetailCardType.LifeStyle)) {
+                    order += StudyDetailCardType.LifeStyle
+                }
+            } else {
+                order += StudyDetailCardType.Daily
+                if (itemState.isVisible(StudyDetailCardType.LifeStyle)) {
+                    order += StudyDetailCardType.LifeStyle
+                }
+                order += StudyDetailCardType.Index
+            }
+        }
+
+        // sun + moon merge into a single card type when both are present
+        val sun = itemState.isVisible(StudyDetailCardType.Sun)
+        val moon = itemState.isVisible(StudyDetailCardType.Moon)
+        if (sun && moon) {
+            order += StudyDetailCardType.SunAndMoon
+        } else {
+            if (sun) order += StudyDetailCardType.Sun
+            if (moon) order += StudyDetailCardType.Moon
+        }
+
+        if (isSmartThingsShown) order += StudyDetailCardType.SmartThings
+        if (itemState.isVisible(StudyDetailCardType.Radar)) order += StudyDetailCardType.Radar
+
+        // the content block is a three-way choice, not three independent cards
+        if (itemState.isVisible(StudyDetailCardType.NewsAndVideo)) {
+            order += StudyDetailCardType.NewsAndVideo
+        } else if (itemState.isVisible(StudyDetailCardType.TodayStoriesAndVideo)) {
+            if (itemState.isVisible(StudyDetailCardType.News)) order += StudyDetailCardType.News
+            order += StudyDetailCardType.TodayStoriesAndVideo
+        } else {
+            if (itemState.isVisible(StudyDetailCardType.News)) order += StudyDetailCardType.News
+            if (itemState.isVisible(StudyDetailCardType.Video)) order += StudyDetailCardType.Video
+        }
+
+        // The if/else arms below are deliberately identical - see the class doc. The
+        // condition is preserved so the original's shape stays legible.
+        val radarVisible = itemState.isVisible(StudyDetailCardType.Radar)
+        val newsVisible = itemState.isVisible(StudyDetailCardType.News)
+        val videoVisible = itemState.isVisible(StudyDetailCardType.Video)
+        val newsAndVideoVisible = itemState.isVisible(StudyDetailCardType.NewsAndVideo)
+        if (itemState.isVisible(StudyDetailCardType.BottomIndex)) {
+            if (!radarVisible || newsVisible || videoVisible || !newsAndVideoVisible) {
+                order += StudyDetailCardType.BottomIndex
+            } else {
+                order += StudyDetailCardType.BottomIndex
+            }
+        } else if (itemState.isVisible(StudyDetailCardType.LifeTips)) {
+            if (!radarVisible || newsVisible || videoVisible || newsAndVideoVisible) {
+                order += StudyDetailCardType.LifeTips
+            } else {
+                order += StudyDetailCardType.LifeTips
+            }
+        }
+
+        // unconditional, and always last
+        order += StudyDetailCardType.Indicator
+        return order
+    }
 }
 
 /** `GetSpanType`. */

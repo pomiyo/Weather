@@ -1,36 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_index_view_holder.xml
-  The Index card: a nested grid of seven measurements, each with its own inner holder
-  and, for four of them, its own Canvas view.
+  Educational reconstruction of detail_index_view_holder.xml.
+
+  Session 3 rewrite, and the most structurally wrong card in the reconstruction until now.
+
+  ### The Index "card" is not a card
+
+  The original's root is a plain ConstraintLayout with NO background and NO title. Its
+  children - the wind compass, the pressure gauge, visibility, dew point and the rest - are
+  each their own DetailCardConstraintLayout, so each tile gets the 22dp corner and the 8%
+  black fill individually. The previous reconstruction wrapped the whole block in one more
+  card, which drew a panel around the tiles that the original does not have.
+
+  ### The AQI card lives inside here
+
+  The ViewStub below is the answer to a question left open in reports/detail-view-types.md:
+  AirIndex is a DetailCardType with its own view holder and layout, yet it has no slot
+  anywhere in GetCardOrderImpl. It is not ordered because it is not a top-level card at all -
+  it is inflated into the top of the Index container, above the grid, with
+  detail_gap_between_cards below it.
+
+  A ViewStub rather than an <include> because air quality is frequently unavailable; the
+  stub costs nothing until it is inflated.
+
+  ### The grid
+
+  GridLayoutManager at spanCount=2, vertical, nested scrolling off. The original uses a
+  SeslLinearLayoutCompat as the wrapper; a plain LinearLayout is used here, since what that
+  class adds over AndroidX's is One UI's rounded-corner and touch-feedback handling rather
+  than layout behaviour. Noted in reports/visual-comparison.md.
 -->
-<dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
+<androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/card_root"
+    android:id="@+id/large_index_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="0dp">
+    android:importantForAccessibility="no">
 
-    <TextView
-        android:id="@+id/card_title"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:id="@+id/large_index_container_inner_wrapper"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/index_list"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:clipChildren="false"
-        android:clipToPadding="false"
         android:orientation="vertical"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/card_title"
-        app:spanCount="2"
-        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-</dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>
+        <ViewStub
+            android:id="@+id/stub_aqi"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/study_detail_air_quality_card_one_line_height"
+            android:layout_marginBottom="@dimen/study_detail_gap_between_cards"
+            android:layout="@layout/study_detail_air_index_view_holder" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/index_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="false"
+            android:orientation="vertical"
+            android:overScrollMode="never"
+            android:scrollbars="none"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            app:spanCount="2" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

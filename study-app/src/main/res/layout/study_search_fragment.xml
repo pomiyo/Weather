@@ -4,6 +4,7 @@
   the original): a pill-shaped query field over a card of results.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/fragment_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -23,7 +24,8 @@
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/study_action_back"
-            android:src="@drawable/study_ic_back" />
+            android:src="@drawable/study_ic_back"
+                app:tint="@color/study_oneui_text_primary" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -41,7 +43,8 @@
                 android:layout_height="22dp"
                 android:alpha="0.7"
                 android:contentDescription="@null"
-                android:src="@drawable/study_ic_search" />
+                android:src="@drawable/study_ic_search"
+                app:tint="@color/study_oneui_text_primary" />
 
             <EditText
                 android:id="@+id/search_field"
@@ -55,8 +58,8 @@
                 android:importantForAutofill="no"
                 android:inputType="textCapWords"
                 android:maxLines="1"
-                android:textColor="#FFFFFFFF"
-                android:textColorHint="#99FFFFFF"
+                android:textColor="@color/study_oneui_text_primary"
+                android:textColorHint="@color/study_oneui_text_secondary"
                 android:textSize="17sp" />
 
             <ImageButton
@@ -66,7 +69,8 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/study_search_clear"
                 android:src="@drawable/study_ic_close"
-                android:visibility="gone" />
+                android:visibility="gone"
+                app:tint="@color/study_oneui_text_primary" />
         </LinearLayout>
     </LinearLayout>
 

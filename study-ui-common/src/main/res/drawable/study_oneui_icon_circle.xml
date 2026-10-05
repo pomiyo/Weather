@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Session 3: was @color/study_oneui_card, which is now #fcfcff in light mode - a near-white
+  disc on a #f1f1f3 background, i.e. invisible, with a white glyph inside it. The label
+  tokens are the pair that exists for exactly this: a tint that sits off the background in
+  both modes.
+-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-    <solid android:color="@color/study_oneui_card" />
+    <solid android:color="@color/study_oneui_label_background" />
 </shape>

@@ -1,8 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_hourly_view_holder.xml
-  Hosts the hourly strip. clipChildren=false is REQUIRED: StudyBezierLineGraphItemView draws
-  control points outside its own bounds (-0.5w to 1.5w), so clipping would cut the curve.
+  Educational reconstruction of detail_hourly_view_holder.xml.
+
+  Session 3 rewrite. The previous version had a generic `card_title` TextView and a
+  RecyclerView with invented margins. The original is three children:
+
+      hourly_narrative   a two-line forecast sentence, NOT a card title
+      hourly_divider     a 0.5px hairline at #4cffffff, inset 20dp
+      hourly_recyclerview
+
+  Three details that are easy to lose and are reproduced here:
+
+  1. The card root carries paddingVertical=17dp and NO background and NO margin. The
+     surface comes from StudyDetailCardConstraintLayout's constructor, which is also where
+     the 22dp corner clip lives.
+  2. The divider is 0.5px - a PIXEL, not a dp. At 450dpi that is a sub-dp hairline, and
+     writing 0.5dp instead would make it visibly thicker. Android resolves `px` literally,
+     so the original's intent is preserved by keeping the unit.
+  3. requiresFadingEdge=horizontal is what produces the soft cut-off at the right edge of
+     the hourly strip, visible in reference-ui/home.png. It is not a gradient overlay.
+
+  clipChildren=false on the RecyclerView is required: StudyBezierLineGraphItemView draws
+  its segment from -0.5w to 1.5w, so each cell deliberately paints outside its own bounds.
+  The card still reads as rounded because the parent clips to a round-rect path in
+  dispatchDraw.
 -->
 <dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -10,29 +31,51 @@
     android:id="@+id/card_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/study_card_margin"
-    android:background="@drawable/study_card_background"
-    android:padding="@dimen/study_card_padding">
+    android:focusable="true"
+    android:importantForAccessibility="no"
+    android:paddingVertical="@dimen/study_detail_hourly_card_padding_vertical"
+    android:textDirection="locale">
 
+    <!-- the forecast sentence: "Scattered thunderstorms possible. Highs 30 to 32C..." -->
     <TextView
-        android:id="@+id/card_title"
-        android:layout_width="0dp"
+        android:id="@+id/hourly_narrative"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:ellipsize="end"
+        android:lineSpacingExtra="@dimen/study_detail_hourly_view_narrative_line_spacing_size"
+        android:layout_marginHorizontal="@dimen/study_detail_hourly_view_narrative_margin_horizontal"
+        android:maxLines="2"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.13sp" />
+
+    <View
+        android:id="@+id/hourly_divider"
+        android:layout_width="match_parent"
+        android:layout_height="0.5px"
+        android:layout_marginTop="@dimen/study_detail_hourly_view_narrative_margin_top"
+        android:layout_marginHorizontal="@dimen/study_detail_hourly_divider_margin_horizontal"
+        android:background="@color/study_detail_hourly_divider"
+        app:layout_constraintTop_toBottomOf="@id/hourly_narrative" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/hourly_list"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/study_card_inner_spacing"
+        android:layout_marginTop="@dimen/study_detail_hourly_view_narrative_margin_top"
+        android:layout_marginStart="@dimen/study_detail_hourly_view_margin_start"
+        android:layout_marginEnd="@dimen/study_detail_hourly_view_margin_end"
+        android:clickable="false"
         android:clipChildren="false"
         android:clipToPadding="false"
+        android:focusable="false"
+        android:nestedScrollingEnabled="false"
         android:orientation="horizontal"
+        android:overScrollMode="ifContentScrolls"
+        android:requiresFadingEdge="horizontal"
+        android:scrollbars="none"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/card_title" />
+        app:layout_constraintTop_toBottomOf="@id/hourly_divider"
+        app:layout_goneMarginTop="0dp" />
 
 </dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- a pill: the corner radius exceeds half of any button height used -->
+<!--
+  The secondary pill. The corner radius exceeds half of any button height used.
+
+  Session 3: the fill was #33FFFFFF - a translucent white that vanished against the light
+  surface, taking its white label with it. Now the label token, which is defined for both
+  modes.
+-->
 <ripple xmlns:android="http://schemas.android.com/apk/res/android" android:color="#33808080">
     <item>
         <shape android:shape="rectangle">
             <corners android:radius="28dp" />
-            <solid android:color="#33FFFFFF" />
+            <solid android:color="@color/study_oneui_label_background" />
         </shape>
     </item>
 </ripple>

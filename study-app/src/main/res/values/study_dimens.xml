@@ -1,25 +1,200 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Educational reconstruction. Values are the reconstruction's own; the original's
-     dimens are among the 300 values* qualifier directories and are not reproduced. -->
-<resources>
-    <dimen name="study_card_margin">5dp</dimen>
-    <dimen name="study_card_padding">20dp</dimen>
-    <dimen name="study_card_inner_spacing">12dp</dimen>
-    <dimen name="study_card_corner_radius">26dp</dimen>
+<!--
+  Educational reconstruction of the original's detail-screen dimension set.
 
-    <dimen name="study_hourly_item_width">64dp</dimen>
-    <dimen name="study_hourly_icon_size">32dp</dimen>
-    <dimen name="study_hourly_graph_height">44dp</dimen>
+  Session 3 change: these were previously 42 invented round numbers. They are now the
+  values traced out of the APK's res/values/dimens.xml, which carries 279 `detail_*`
+  entries. A measurement is a fact about the layout, not an asset, so these are recorded
+  here directly with the original resource name kept in the comment so the mapping stays
+  legible. See reports/resource-map.md section 3.
+
+  Naming: `study_detail_*` mirrors an original `detail_*` entry one-for-one. The older
+  `study_*` names are kept because 56 layouts already reference them, but their values
+  have been corrected to the traced originals where a counterpart exists.
+-->
+<resources>
+
+    <!-- ========== card surface ==========
+         DetailCardConstraintLayout clips to this radius in dispatchDraw and sets
+         detail_card_bg_filled as its own background in the constructor. The cards
+         themselves carry no background or margin attribute in XML. -->
+    <dimen name="study_detail_card_radius">22dp</dimen>                      <!-- detail_card_radius -->
+    <dimen name="study_detail_card_indicator_margin_bottom">8dp</dimen>
+    <dimen name="study_detail_card_page_indicator_dot_size">6dp</dimen>
+    <dimen name="study_detail_card_page_indicator_dot_gap">4dp</dimen>
+
+    <!--
+      The content inset.
+
+      GetContentAreaWidthImpl computes the usable width as
+          screenWidthPx - 2 * detail_content_portrait_padding
+      in portrait, so 5dp is the padding on the CONTENT ROOT, applied in code by
+      DetailMainViewSetup rather than declared in a layout.
+
+      The per-card margin on top of that is not a dimension resource at all - the original
+      applies it from an ItemDecoration - so it is measured instead: in reference-ui/home.png
+      the card edge falls at x=30px of 1080 at 450dpi (scale 2.8125), i.e. 10.67dp total.
+      5dp of root padding leaves 5.67dp of card margin, rounded to 5.5dp here.
+
+      This was briefly set to 0dp while tracing the hourly card, which pushed every card
+      edge-to-edge and clipped the card titles; recorded here so it is not repeated.
+    -->
+    <dimen name="study_detail_content_portrait_padding">5dp</dimen>
+    <dimen name="study_card_margin">5.5dp</dimen>
+
+    <!--
+      Uniform inner padding for the cards that have not yet been migrated to per-card
+      margins.
+
+      The original has no such value - each card declares its own, clustering at 20dp
+      (detail_large_index_margin_horizontal, detail_four_contents_margin_horizontal,
+      detail_two_contents_content_margin_horizontal) with the hourly card's narrative at
+      25dp and its divider at 20dp. 20dp is therefore the honest stand-in until each card
+      is traced individually.
+
+      Setting this to 0 while tracing the hourly card clipped every other card's title
+      against the 22dp corner radius; recorded so it is not repeated.
+    -->
+    <dimen name="study_card_padding">20dp</dimen>
+
+    <!-- legacy names, corrected -->
+    <dimen name="study_card_corner_radius">22dp</dimen>
+    <dimen name="study_card_inner_spacing">12dp</dimen>
+
+    <!-- ========== detail header / top info ========== -->
+    <dimen name="study_detail_top_info_expand_height">216dp</dimen>
+    <dimen name="study_detail_top_info_collapse_height">94dp</dimen>
+    <dimen name="study_detail_top_info_small_collapse_height">84dp</dimen>
+    <dimen name="study_detail_top_info_height">64dp</dimen>
+    <dimen name="study_detail_top_info_land_height">56dp</dimen>
+    <dimen name="study_detail_top_info_scene_start_guideline_bottom">172dp</dimen>
+    <dimen name="study_detail_top_info_scene_end_guideline_bottom">50dp</dimen>
+    <dimen name="study_detail_top_info_weather_icon_size">70dp</dimen>
+    <dimen name="study_detail_top_info_weather_illustration_width">360dp</dimen>
+    <dimen name="study_detail_top_info_weather_illustration_height">260dp</dimen>
+    <dimen name="study_detail_top_info_scene_start_view_margin_start">23dp</dimen>
+    <dimen name="study_detail_top_info_scene_end_view_margin_start">23dp</dimen>
+    <dimen name="study_detail_top_info_scene_start_icon_margin_end">20dp</dimen>
+    <dimen name="study_detail_top_info_scene_end_icon_margin_end">20dp</dimen>
+    <dimen name="study_detail_top_info_scene_start_desc_margin_top">2dp</dimen>
+    <dimen name="study_detail_top_info_scene_start_narrative_margin_top">2dp</dimen>
+    <dimen name="study_detail_top_info_scene_start_feels_like_margin_top">2dp</dimen>
+    <dimen name="study_detail_top_info_scene_start_date_margin_bottom">17dp</dimen>
+    <dimen name="study_detail_top_info_scene_start_city_layout_margin_end">26dp</dimen>
+    <dimen name="study_detail_top_info_scene_end_desc_margin_start">12dp</dimen>
+    <dimen name="study_detail_top_info_scene_end_desc_margin_end">6dp</dimen>
+
+    <!--
+      The expanded header block = toolbar + top info = 64dp + 216dp.
+
+      The toolbar is drawn INSIDE this block here (the original keeps it as a sibling and
+      offsets the CoordinatorLayout below it by detail_top_info_height instead), so the
+      64dp has to be added to the block's own height. Leaving it at 216dp put the guideline
+      44dp from the top, i.e. underneath the toolbar, and the temperature rendered on top
+      of the city name.
+    -->
+    <dimen name="study_header_expanded_height">280dp</dimen>
+    <dimen name="study_toolbar_icon">48dp</dimen>
+    <dimen name="study_detail_toolbar_location_name_margin_start">12dp</dimen>
+    <dimen name="study_detail_toolbar_icon_size">20dp</dimen>
+
+    <!-- ========== hourly card ==========
+         The card root is paddingVertical=17dp with no margin and no background attr. -->
+    <dimen name="study_detail_hourly_card_padding_vertical">17dp</dimen>
+    <dimen name="study_detail_hourly_view_min_width">47.4dp</dimen>
+    <dimen name="study_detail_hourly_view_weather_image_size">24dp</dimen>
+    <dimen name="study_detail_hourly_view_chart_height">45dp</dimen>
+    <dimen name="study_detail_hourly_view_chart_line_width">1.5dp</dimen>
+    <dimen name="study_detail_hourly_view_chart_dot_size">6dp</dimen>
+    <dimen name="study_detail_hourly_view_chart_vertical_padding">8.5dp</dimen>
+    <dimen name="study_detail_hourly_view_margin_start">18dp</dimen>
+    <dimen name="study_detail_hourly_view_margin_end">18dp</dimen>
+    <dimen name="study_detail_hourly_view_narrative_margin_horizontal">25dp</dimen>
+    <dimen name="study_detail_hourly_view_narrative_margin_top">12dp</dimen>
+    <dimen name="study_detail_hourly_view_narrative_line_spacing_size">5dp</dimen>
+    <dimen name="study_detail_hourly_divider_margin_horizontal">20dp</dimen>
+    <dimen name="study_detail_hourly_divider_height">0.5dp</dimen>
+    <dimen name="study_detail_hourly_time_min_height">17dp</dimen>
+    <dimen name="study_detail_hourly_item_time_margin_horizontal">1.9dp</dimen>
+    <dimen name="study_detail_hourly_view_weather_image_margin_top">5dp</dimen>
+    <dimen name="study_detail_hourly_view_weather_image_margin_bottom">7dp</dimen>
+    <dimen name="study_detail_hourly_view_deco_wind_item_image_size">24dp</dimen>
+    <dimen name="study_detail_hourly_view_deco_wind_layout_margin_top">11dp</dimen>
+    <dimen name="study_detail_hourly_view_deco_wind_item_text_margin_top">5dp</dimen>
+
+    <!-- legacy names, corrected -->
+    <dimen name="study_hourly_item_width">47.4dp</dimen>
+    <dimen name="study_hourly_icon_size">24dp</dimen>
+    <dimen name="study_hourly_graph_height">45dp</dimen>
     <dimen name="study_hourly_wind_size">24dp</dimen>
 
+    <!-- ========== text sizes, as the original declares them ==========
+         The dp sizes are deliberate: they do not scale with the user's font setting. -->
+    <dimen name="study_detail_text_size_10_sp">10sp</dimen>
+    <dimen name="study_detail_text_size_11_sp">11sp</dimen>
+    <dimen name="study_detail_text_size_12_sp">12sp</dimen>
+    <dimen name="study_detail_text_size_13_sp">13sp</dimen>
+    <dimen name="study_detail_text_size_14_sp">14sp</dimen>
+    <dimen name="study_detail_text_size_15_sp">15sp</dimen>
+    <dimen name="study_detail_text_size_16_sp">16sp</dimen>
+    <dimen name="study_detail_text_size_18_sp">18sp</dimen>
+    <dimen name="study_detail_text_size_20_sp">20sp</dimen>
+    <dimen name="study_detail_text_size_21_sp">21sp</dimen>
+    <dimen name="study_detail_text_size_22_sp">22sp</dimen>
+    <dimen name="study_detail_text_size_24_sp">24sp</dimen>
+    <dimen name="study_detail_text_size_16_dp">16dp</dimen>
+    <dimen name="study_detail_text_size_20_dp">20dp</dimen>
+    <dimen name="study_detail_text_size_26_dp">26dp</dimen>
+    <dimen name="study_detail_text_size_34_dp">34dp</dimen>
+    <dimen name="study_detail_text_size_50_dp">50dp</dimen>
+    <dimen name="study_detail_text_size_70_dp">70dp</dimen>
+
+    <!-- ========== remaining card geometry ==========
+         Not yet traced to a specific original dimen; kept at the previous reconstruction
+         values so the layouts that reference them keep building. Flagged in
+         reports/resource-map.md as outstanding. -->
     <dimen name="study_daily_day_width">56dp</dimen>
     <dimen name="study_daily_precip_width">40dp</dimen>
-    <dimen name="study_daily_icon_size">30dp</dimen>
+    <dimen name="study_daily_icon_size">24dp</dimen>
     <dimen name="study_daily_temp_width">40dp</dimen>
     <dimen name="study_daily_range_height">6dp</dimen>
     <dimen name="study_daily_row_padding">10dp</dimen>
 
-    <dimen name="study_index_graph_height">44dp</dimen>
+    <!-- ========== index card ==========
+         The Index "card" is not a card: it is a CONTAINER whose children are each their own
+         DetailCardConstraintLayout, laid out by a GridLayoutManager at spanCount=2. The
+         container itself is a plain ConstraintLayout with no background, which is why the
+         original has no outer panel around the tiles. -->
+    <dimen name="study_detail_gap_between_cards">10dp</dimen>
+    <dimen name="study_detail_index_height">90dp</dimen>
+    <dimen name="study_detail_index_image_size">18dp</dimen>
+    <dimen name="study_detail_index_value_image_size">28dp</dimen>
+    <dimen name="study_detail_index_padding_top">14dp</dimen>
+    <dimen name="study_detail_index_padding_bottom">18dp</dimen>
+    <dimen name="study_detail_index_padding_horizontal">20dp</dimen>
+    <dimen name="study_detail_index_title_margin_start">2dp</dimen>
+    <dimen name="study_detail_index_value_margin_top">8dp</dimen>
+
+    <!-- the four graph-bearing tiles are more than twice as tall as the plain ones -->
+    <dimen name="study_detail_large_index_height">190dp</dimen>
+    <dimen name="study_detail_large_index_padding_top">12dp</dimen>
+    <dimen name="study_detail_large_index_padding_bottom">20dp</dimen>
+    <dimen name="study_detail_large_index_margin_horizontal">20dp</dimen>
+    <dimen name="study_detail_large_index_graph_margin_horizontal">15dp</dimen>
+    <dimen name="study_detail_large_index_description_margin_top">5dp</dimen>
+    <dimen name="study_detail_large_index_value_margin_top">5dp</dimen>
+    <dimen name="study_detail_large_index_value_margin_bottom">8dp</dimen>
+    <dimen name="study_detail_large_index_wind_graph_size">109dp</dimen>
+    <dimen name="study_detail_large_index_wind_speed_unit_margin_bottom">32dp</dimen>
+    <dimen name="study_detail_large_index_wind_padding_bottom">4dp</dimen>
+    <dimen name="study_detail_large_index_humidity_graph_height">12dp</dimen>
+    <dimen name="study_detail_large_index_uv_graph_height">12dp</dimen>
+    <dimen name="study_detail_large_index_pressure_graph_radius">62dp</dimen>
+    <dimen name="study_detail_large_index_pressure_graph_stroke_size">12dp</dimen>
+    <dimen name="study_detail_air_quality_card_one_line_height">90dp</dimen>
+    <dimen name="study_detail_air_quality_card_two_line_height">190dp</dimen>
+
+    <dimen name="study_index_graph_height">45dp</dimen>
     <dimen name="study_air_bar_height">28dp</dimen>
     <dimen name="study_sun_arc_height">96dp</dimen>
     <dimen name="study_moon_size">56dp</dimen>
@@ -28,6 +203,12 @@
 
     <dimen name="study_precipitation_item_width">48dp</dimen>
     <dimen name="study_precipitation_bar_height">64dp</dimen>
+    <dimen name="study_detail_precipitation_graph_height">69dp</dimen>
+    <dimen name="study_detail_precipitation_graph_margin_top">9.6dp</dimen>
+    <dimen name="study_detail_precipitation_graph_top_img_height">2.4dp</dimen>
+    <dimen name="study_detail_precipitation_icon_width">10dp</dimen>
+    <dimen name="study_detail_precipitation_icon_height">13dp</dimen>
+    <dimen name="study_detail_precipitation_padding_vertical">19dp</dimen>
 
     <dimen name="study_alert_stripe_width">4dp</dimen>
     <dimen name="study_insight_icon_size">32dp</dimen>
@@ -44,9 +225,6 @@
     <dimen name="study_content_tile_image_height">96dp</dimen>
     <dimen name="study_indicator_logo_width">80dp</dimen>
     <dimen name="study_indicator_logo_height">20dp</dimen>
-
-    <dimen name="study_header_expanded_height">340dp</dimen>
-    <dimen name="study_toolbar_icon">48dp</dimen>
     <dimen name="study_radar_play_button_size">48dp</dimen>
     <dimen name="study_radar_view_logo_height">16dp</dimen>
     <dimen name="study_radar_attribution_padding">6dp</dimen>

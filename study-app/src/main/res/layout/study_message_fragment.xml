@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Educational reconstruction of the message-and-two-buttons screens (permission, locating). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/fragment_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -28,7 +29,8 @@
                 android:layout_height="52dp"
                 android:layout_gravity="center"
                 android:contentDescription="@null"
-                android:src="@drawable/study_ic_place" />
+                android:src="@drawable/study_ic_place"
+                app:tint="@color/study_oneui_text_primary" />
 
             <ProgressBar
                 android:id="@+id/message_progress"
@@ -72,7 +74,7 @@
             android:layout_height="52dp"
             android:background="@drawable/study_button_primary_background"
             android:textAllCaps="false"
-            android:textColor="#FF1C313A"
+            android:textColor="@color/study_oneui_text_primary"
             android:textSize="16sp" />
 
         <Button
@@ -83,7 +85,7 @@
             android:layout_marginTop="10dp"
             android:background="@drawable/study_button_background"
             android:textAllCaps="false"
-            android:textColor="#FFFFFFFF"
+            android:textColor="@color/study_oneui_text_primary"
             android:textSize="16sp" />
     </LinearLayout>
 </LinearLayout>

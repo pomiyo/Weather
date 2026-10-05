@@ -149,6 +149,26 @@ data class StudyDetailBackgroundState(
     val isDay: Boolean = true,
     val gradientStartColor: Int = 0,
     val gradientEndColor: Int = 0,
+    /**
+     * The painted artwork behind the screen - one of the eleven `detail_bg_gradient_*`
+     * images, resolved by `StudyBackgroundProvider.getBackground(iconNum, isDay)`.
+     *
+     * 0 when the local study assets are absent, in which case the gradient pair above is
+     * drawn instead. The original has no such fallback: the artwork always ships.
+     */
+    val artworkResId: Int = 0,
+    /**
+     * The hero Lottie animation - one of the 37 compositions in the `illust` asset set,
+     * resolved by
+     * `StudyIllustrationProvider.resolve(iconNum, temperature)`.
+     *
+     * Empty when the local study assets are absent. Carried as an asset PATH rather than a
+     * resource id because Lottie loads it from assets, which is also how the original does
+     * it - `DetailIllustrationState` holds a string too.
+     */
+    val illustrationAsset: String = "",
+    /** intrinsic aspect ratio of [illustrationAsset]; see StudyIllustrationProvider */
+    val illustrationAspectRatio: Float = 1f,
 )
 
 /**

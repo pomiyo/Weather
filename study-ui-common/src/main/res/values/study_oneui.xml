@@ -8,13 +8,36 @@
   The original gets all of this from the unpublished SESL AndroidX forks.
 -->
 <resources>
-    <color name="study_oneui_card">#24FFFFFF</color>
-    <color name="study_oneui_card_pressed">#3DFFFFFF</color>
-    <color name="study_oneui_divider">#1FFFFFFF</color>
-    <color name="study_oneui_text_primary">#FFFFFFFF</color>
-    <color name="study_oneui_text_secondary">#B8FFFFFF</color>
-    <color name="study_oneui_accent">#FF9CC2FF</color>
-    <color name="study_oneui_dialog">#FF252A31</color>
+    <!--
+      LIGHT values. The night set lives in values-night/study_oneui.xml.
+
+      Session 3 change: these were hard-coded white-on-dark (#24FFFFFF card, #FFFFFFFF text)
+      and the app theme was Theme.AppCompat.NoActionBar, so the locations, search and
+      settings screens were painted with the detail screen's dark palette whatever the system
+      was doing. The original's base theme is Theme.AppCompat.DayNight.NoActionBar, and
+      reference-ui/locations.png - captured on this device in light mode - shows those screens
+      as a light One UI surface: grey background, white rounded rows, black text.
+
+      The detail screen is unaffected either way, because it paints its own artwork over the
+      window background. These tokens are used only by the locations, search, settings, EULA
+      and message screens.
+
+      Values traced from the original:
+        col_common_bg_color        #f1f1f3 / #010102   screen background, status and nav bar
+        col_common_contents_bg_color #fcfcff / #17171a card surface
+        primary_text_color         #de000000 / #fafafa
+        locations_add_label_type_*  #e9e9ec,#4d4d52 / #3a3a3d,#a3a3ad
+    -->
+    <color name="study_oneui_background">#f1f1f3</color>
+    <color name="study_oneui_card">#fcfcff</color>
+    <color name="study_oneui_card_pressed">#14000000</color>
+    <color name="study_oneui_divider">#1f000000</color>
+    <color name="study_oneui_text_primary">#de000000</color>
+    <color name="study_oneui_text_secondary">#8a000000</color>
+    <color name="study_oneui_accent">#387aff</color>
+    <color name="study_oneui_dialog">#fcfcff</color>
+    <color name="study_oneui_label_background">#e9e9ec</color>
+    <color name="study_oneui_label_text">#4d4d52</color>
 
     <dimen name="study_oneui_card_radius">26dp</dimen>
     <dimen name="study_oneui_screen_margin">12dp</dimen>

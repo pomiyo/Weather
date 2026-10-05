@@ -1,49 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_app_toolbar_layout: the city name (visible once the
-  header has collapsed) and the two actions the original puts here.
+  Educational reconstruction of detail_app_toolbar_layout.xml.
+
+  Session 3 rewrite. Two corrections:
+
+  1. The city name is ALWAYS VISIBLE, not faded in on collapse. The previous version set
+     android:alpha="0" and had the renderer raise it as the header collapsed, on the
+     assumption that the expanded header carried its own city label. It does not -
+     reference-ui/home.png shows "(pin) Lahug" sitting in the toolbar above the 33°, and
+     home-scroll-2.png shows the same view still there once everything else has gone. It is
+     one label that never moves, which is why the original's app_bar_layout contains no city
+     at all.
+
+  2. The toolbar is a fixed detail_top_info_height (64dp), not ?attr/actionBarSize. The
+     CoordinatorLayout below it carries a matching 64dp top margin, so the two numbers have
+     to agree or the header overlaps the toolbar - which is exactly what happened when the
+     city was briefly moved into the MotionLayout.
+
+  Type is Sec.700.White.21sp - weight 700, the heaviest on the screen.
+
+  Deviation: the original puts no action buttons here; locations and settings live in the
+  bottom floating bar. They are kept here because the reconstruction's bottom bar does not
+  yet host them. Flagged in reports/visual-comparison.md.
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/toolbar_container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <androidx.appcompat.widget.Toolbar
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize">
+        android:layout_height="@dimen/study_detail_top_info_height"
+        android:background="@android:color/transparent"
+        android:soundEffectsEnabled="false">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+        <!-- pin + name, packed together and left aligned at the same 23dp as the header -->
+        <ImageView
+            android:id="@+id/toolbar_city_icon"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="@dimen/study_detail_top_info_scene_start_view_margin_start"
+            android:contentDescription="@string/study_header_current_location"
+            android:src="@drawable/study_ic_place"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/study_detail_white_text_color" />
 
-            <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
-                android:id="@+id/toolbar_city"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:alpha="0"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textAppearance="@style/Study.TextAppearance.ToolbarTitle" />
+        <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+            android:id="@+id/toolbar_city"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/study_detail_toolbar_location_name_margin_start"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAlignment="viewStart"
+            android:textAppearance="@style/Study.TextAppearance.Detail.Sec.700.White.21sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/toolbar_locations"
+            app:layout_constraintStart_toEndOf="@id/toolbar_city_icon"
+            app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageButton
-                android:id="@+id/toolbar_locations"
-                android:layout_width="@dimen/study_toolbar_icon"
-                android:layout_height="@dimen/study_toolbar_icon"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/study_action_locations"
-                android:src="@drawable/study_ic_list" />
+        <ImageButton
+            android:id="@+id/toolbar_locations"
+            android:layout_width="@dimen/study_toolbar_icon"
+            android:layout_height="@dimen/study_toolbar_icon"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/study_action_locations"
+            android:src="@drawable/study_ic_list"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/toolbar_settings"
+            app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageButton
-                android:id="@+id/toolbar_settings"
-                android:layout_width="@dimen/study_toolbar_icon"
-                android:layout_height="@dimen/study_toolbar_icon"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/study_action_settings"
-                android:src="@drawable/study_ic_settings" />
-        </LinearLayout>
-    </androidx.appcompat.widget.Toolbar>
+        <ImageButton
+            android:id="@+id/toolbar_settings"
+            android:layout_width="@dimen/study_toolbar_icon"
+            android:layout_height="@dimen/study_toolbar_icon"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/study_action_settings"
+            android:src="@drawable/study_ic_settings"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </FrameLayout>

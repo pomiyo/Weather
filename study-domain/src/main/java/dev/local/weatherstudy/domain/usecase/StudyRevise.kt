@@ -331,33 +331,111 @@ class StudyAssignIconNum @Inject constructor() {
     }
 
     /**
-     * Illustrative mapping. The shape — (internal condition code, day/night) → icon id —
-     * is the original's; the table contents are not Samsung's.
+     * Maps an internal condition code and a day/night flag onto the icon vocabulary below.
+     *
+     * The SHAPE is the original's: one central mapping, applied once, after which nothing
+     * downstream ever sees a provider's own code. The BANDS are this project's - the
+     * original's per-provider lookup tables are provider-proprietary and not reproduced.
+     *
+     * ### Only seven input values ever arrive
+     *
+     * `StudyProviderAConverters.INTERNAL_CODE_RANGES` collapses the gateway's codes onto the
+     * START of each band, so `internalCode` is only ever one of
+     *
+     *     0 clear   2 partly cloudy   5 cloudy   9 rain
+     *     19 snow   30 thunderstorm   36 sandstorm      (-1 unknown)
+     *
+     * This is matched on those values, not on ranges that look plausible. Writing
+     * `in 9..11 -> ICON_FOG` was tried and silently re-pointed rain at the fog artwork,
+     * because 9 is the rain band's start and nothing else in 9..11 is ever produced - the
+     * hourly strip filled with fog glyphs under a "Drizzle" narrative.
+     *
+     * ### The vocabulary is wider than the data
+     *
+     * Twenty-three of the thirty codes - fog, shower, hail, hurricane, ice, the three
+     * "partly sunny with ..." variants, the four intensity steps - are unreachable from this
+     * gateway. They are kept because the ARTWORK is keyed by them: every one has its own
+     * Lottie animation, its own pair of vectors and a background mapping, and a richer
+     * provider would reach them. The gap is the reconstruction's data source, not its
+     * vocabulary.
      */
     private fun iconNumOf(internalCode: Int, dayOrNight: Int): Int {
         val night = dayOrNight == dev.local.weatherstudy.domain.entity.weather.StudyForecastTime.NIGHT
         return when (internalCode) {
-            in 0..1 -> if (night) ICON_CLEAR_NIGHT else ICON_CLEAR_DAY
-            in 2..4 -> if (night) ICON_PARTLY_NIGHT else ICON_PARTLY_DAY
-            in 5..8 -> ICON_CLOUDY
-            in 9..18 -> ICON_RAIN
-            in 19..29 -> ICON_SNOW
-            in 30..35 -> ICON_THUNDERSTORM
-            in 36..40 -> ICON_SANDSTORM
-            else -> ICON_UNKNOWN
+            CODE_CLEAR -> if (night) ICON_CLEAR else ICON_SUNNY
+            CODE_PARTLY_CLOUDY -> if (night) ICON_PARTLY_CLOUD_NIGHT else ICON_PARTLY_CLOUD
+            CODE_CLOUDY -> if (night) ICON_MOSTLY_CLOUDY_NIGHT else ICON_CLOUDY
+            CODE_RAIN -> ICON_RAIN
+            CODE_SNOW -> ICON_SNOW
+            CODE_THUNDERSTORM -> ICON_THUNDERSTORM
+            CODE_SANDSTORM -> ICON_SAND_STORM
+            // the original's switches end in a default that equals the clear-sky arm
+            else -> if (night) ICON_CLEAR else ICON_SUNNY
         }
     }
 
+    /**
+     * The icon vocabulary: thirty values, 0..29.
+     *
+     * Session 3 change. This was previously ten values of this project's own invention
+     * (ICON_UNKNOWN..ICON_SANDSTORM), which meant the reconstruction could not address the
+     * original's artwork at all - every artwork family in the APK is keyed on this exact
+     * numbering:
+     *
+     *   * the `white` and `dark` Lottie asset sets - 30 entries each, via AnimIconProvider
+     *   * the `illust` Lottie asset set            - 30 entries, via DetailIllustrationStateConverter
+     *   * R.drawable.weather_ic_*                     - 30 AnimatedVectorDrawables x 2 variants
+     *   * detail_bg_gradient_*.png                    - 30 codes collapsed onto 11, via BackgroundProvider
+     *
+     * The numbering is recovered from those resource tables rather than guessed: code 7 is
+     * "shower" because AnimIconProvider maps 7 to shower.json and the illustration converter
+     * maps 7 to illust/shower.json. It is a vocabulary, not provider data, so reproducing it
+     * is what lets every one of those families be addressed correctly.
+     *
+     * Note the three near-synonym groups, which are genuinely distinct artwork in the
+     * original and are the main reason the vocabulary needs thirty values rather than ten:
+     * sunny/mostly sunny/partly cloudy/mostly cloudy/cloudy, and the four rain intensities,
+     * and the four snow ones.
+     */
     companion object {
-        const val ICON_UNKNOWN = 0
-        const val ICON_CLEAR_DAY = 1
-        const val ICON_CLEAR_NIGHT = 2
-        const val ICON_PARTLY_DAY = 3
-        const val ICON_PARTLY_NIGHT = 4
-        const val ICON_CLOUDY = 5
+        /** the seven band starts StudyProviderAConverters can emit; see iconNumOf */
+        private const val CODE_CLEAR = 0
+        private const val CODE_PARTLY_CLOUDY = 2
+        private const val CODE_CLOUDY = 5
+        private const val CODE_RAIN = 9
+        private const val CODE_SNOW = 19
+        private const val CODE_THUNDERSTORM = 30
+        private const val CODE_SANDSTORM = 36
+
+        const val ICON_SUNNY = 0
+        const val ICON_CLEAR = 1
+        const val ICON_PARTLY_CLOUD = 2
+        const val ICON_PARTLY_CLOUD_NIGHT = 3
+        const val ICON_CLOUDY = 4
+        const val ICON_FOG = 5
         const val ICON_RAIN = 6
-        const val ICON_SNOW = 7
-        const val ICON_THUNDERSTORM = 8
-        const val ICON_SANDSTORM = 9
+        const val ICON_SHOWER = 7
+        const val ICON_PARTLY_SUNNY_WITH_SHOWER = 8
+        const val ICON_THUNDERSTORM = 9
+        const val ICON_PARTLY_SUNNY_WITH_THUNDER = 10
+        const val ICON_LIGHT_SNOW = 11
+        const val ICON_PARTLY_SUNNY_WITH_FLURRIES = 12
+        const val ICON_SNOW = 13
+        const val ICON_RAIN_AND_SNOW = 14
+        const val ICON_ICE = 15
+        const val ICON_HOT = 16
+        const val ICON_COLD = 17
+        const val ICON_WIND = 18
+        const val ICON_RAIN_AND_THUNDER = 19
+        const val ICON_HEAVY_RAIN = 20
+        const val ICON_SAND_STORM = 21
+        const val ICON_HURRICANE = 22
+        const val ICON_MOSTLY_SUNNY = 23
+        const val ICON_MOSTLY_CLEAR = 24
+        const val ICON_MOSTLY_CLOUDY = 25
+        const val ICON_MOSTLY_CLOUDY_NIGHT = 26
+        const val ICON_HEAVY_SNOW = 27
+        const val ICON_RAIN_AND_SLEET = 28
+        const val ICON_HAIL = 29
     }
 }

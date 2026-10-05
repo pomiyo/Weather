@@ -1,84 +1,204 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of one header page (detail_top_info in the original): the
-  current conditions for one saved city. Bound from StudyDetailTopInfoState.
+  Educational reconstruction of detail_app_bar_layout.xml - one header page, i.e. the
+  current conditions for one saved city.
+
+  Session 3 rewrite. The previous version was a CENTRED vertical LinearLayout with a 92sp
+  sans-serif-thin temperature and a 72dp icon. The original is none of those things:
+
+    * the root is CollapsibleToolbar, a MotionLayout subclass, driven by
+      app:layoutDescription=@xml/scene_detail_header;
+    * everything is LEFT aligned at margin-start 23dp, not centred;
+    * the temperature is 70dp in the clock2019L-RM numeral face, weight 400, #fafaff -
+      not 92sp sans-serif-thin white;
+    * the weather icon is 70dp and is a looping Lottie animation, not a static 72dp image.
+
+  ### Why a MotionLayout and not an offset listener
+
+  This is the part that cannot be faked. Collapsing does not merely fade the header: the
+  two ConstraintSets RESTACK it. Expanded, the narrative/high-low/feels-like sit in a
+  vertical chain BELOW the temperature at margin-start 23dp. Collapsed, they sit BESIDE
+  the temperature, chained against the icon on the right. A manual
+  OnOffsetChangedListener can animate alpha and translation but cannot re-parent
+  constraints, so the expanded layout in reference-ui/home.png is unreachable without the
+  scene.
+
+  Note the layout's own constraints below describe the COLLAPSED (end) arrangement, with
+  the start arrangement living in the scene - which is why reading the XML alone gives a
+  misleading picture of the expanded screen.
+
+  ### The duplicate views
+
+  high_low / feels_like exist twice, once for each state (`_collapse` suffix), rather than
+  being re-constrained. They differ in width (wrap_content vs 0dp) and in which chain they
+  belong to, and cross-fade at framePosition 33.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.motion.widget.MotionLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/header_page_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:paddingTop="?attr/actionBarSize">
+    android:background="?android:selectableItemBackground"
+    android:importantForAccessibility="yes"
+    android:screenReaderFocusable="true"
+    app:layoutDescription="@xml/study_scene_detail_header">
 
-    <LinearLayout
+    <!-- the horizontal datum both states hang off: 172dp from the bottom when expanded,
+         50dp when collapsed. Moving ONE guideline is what drives the whole re-layout. -->
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/info_guide_line"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintGuide_end="@dimen/study_detail_top_info_scene_end_guideline_bottom" />
+
+    <!--
+      No city label here.
+
+      It lives in the toolbar (study_detail_app_toolbar_layout), which is pinned above this
+      view and never moves, exactly as in the original - detail_app_bar_layout contains no
+      city either. Putting one here as well produced two labels overlapping at the top of
+      the header, because the temperature is centred on a guideline only 44dp below it.
+    -->
+
+    <!-- 70dp, clock2019L-RM, weight 400, #fafaff. The signature of the screen. -->
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/header_temperature"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:gravity="bottom"
+        android:importantForAccessibility="no"
+        android:includeFontPadding="true"
+        android:textAppearance="@style/Study.TextAppearance.Detail.SecNum.400.White.70dp"
+        app:layout_constraintBottom_toBottomOf="@id/info_guide_line"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/info_guide_line" />
 
-        <ImageView
-            android:id="@+id/header_current_pin"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_marginEnd="4dp"
-            android:contentDescription="@string/study_header_current_location"
-            android:src="@drawable/study_ic_place"
-            android:visibility="gone" />
+    <!--
+      The 70dp condition icon.
 
-        <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
-            android:id="@+id/header_city"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textColor="#FFFFFFFF"
-            android:textSize="24sp" />
-    </LinearLayout>
+      Now a LottieAnimationView, matching @id/weather_expand_icon in the original's
+      detail_app_bar_layout - same 70dp size, same autoPlay and same infinite restart loop.
+      The animation is one of the thirty compositions in the `white` or `dark` asset set,
+      chosen on the system theme by StudyIconProvider.getAnimationAsset.
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+      The original keeps a second, identical Lottie view for the collapsed state
+      (@id/weather_collapse_icon_view) and cross-fades them. One view is used here because
+      the two carry the same animation at the same size; the scene moves it instead.
 
-        <ImageView
-            android:id="@+id/header_icon"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:layout_marginEnd="8dp"
-            android:contentDescription="@null" />
+      LOCAL STUDY RESOURCE - loaded by asset path, falls back to the static vector when the
+      assets are absent. DO NOT REDISTRIBUTE.
+    -->
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/header_icon"
+        android:layout_width="@dimen/study_detail_top_info_weather_icon_size"
+        android:layout_height="@dimen/study_detail_top_info_weather_icon_size"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no"
+        app:layout_constraintBottom_toBottomOf="@id/info_guide_line"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/info_guide_line"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true" />
 
-        <TextView
-            android:id="@+id/header_temperature"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-thin"
-            android:includeFontPadding="false"
-            android:textColor="#FFFFFFFF"
-            android:textSize="92sp" />
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/header_condition"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="#FFFFFFFF"
-        android:textSize="18sp" />
-
-    <TextView
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/header_high_low"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textColor="#E6FFFFFF"
-        android:textSize="14sp" />
+        android:ellipsize="end"
+        android:importantForAccessibility="no"
+        android:maxLines="1"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.16dp"
+        app:layout_constraintBottom_toTopOf="@id/header_feels_like"
+        app:layout_constraintEnd_toStartOf="@id/header_icon"
+        app:layout_constraintStart_toEndOf="@id/header_temperature"
+        app:layout_constraintTop_toTopOf="@id/header_temperature"
+        app:layout_constraintVertical_chainStyle="packed" />
 
-    <TextView
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/header_high_low_collapse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:importantForAccessibility="no"
+        android:maxLines="1"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.16dp"
+        app:layout_constraintBottom_toTopOf="@id/header_condition"
+        app:layout_constraintEnd_toStartOf="@id/header_icon"
+        app:layout_constraintStart_toEndOf="@id/header_temperature"
+        app:layout_constraintTop_toTopOf="@id/header_temperature"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/header_feels_like"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#B3FFFFFF"
-        android:textSize="14sp" />
-</LinearLayout>
+        android:ellipsize="end"
+        android:importantForAccessibility="no"
+        android:maxLines="1"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.16dp"
+        app:layout_constraintBottom_toTopOf="@id/header_date"
+        app:layout_constraintEnd_toStartOf="@id/header_icon"
+        app:layout_constraintStart_toEndOf="@id/header_temperature"
+        app:layout_constraintTop_toBottomOf="@id/header_high_low"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <!-- the condition sentence: "Fair". Sec weight 600 at 20dp - heavier and larger than
+         the high/low line beneath it, which is weight 400 at 16dp. -->
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/header_condition"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:importantForAccessibility="no"
+        android:maxLines="1"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20dp"
+        app:layout_constraintBottom_toBottomOf="@id/header_temperature"
+        app:layout_constraintEnd_toStartOf="@id/header_icon"
+        app:layout_constraintStart_toEndOf="@id/header_temperature"
+        app:layout_constraintTop_toBottomOf="@id/header_high_low"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/header_feels_like_collapse"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:importantForAccessibility="no"
+        android:maxLines="1"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.16dp"
+        app:layout_constraintBottom_toBottomOf="@id/header_temperature"
+        app:layout_constraintEnd_toStartOf="@id/header_icon"
+        app:layout_constraintStart_toEndOf="@id/header_temperature"
+        app:layout_constraintTop_toBottomOf="@id/header_high_low"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <!-- a real TextClock, as in the original: the header's time ticks on its own without
+         the ViewModel re-emitting. Hidden by default. -->
+    <TextClock
+        android:id="@+id/header_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="start"
+        android:importantForAccessibility="no"
+        android:maxLines="1"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.16dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/header_bottom_space"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <Space
+        android:id="@+id/header_bottom_space"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/study_detail_top_info_scene_start_date_margin_bottom"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.motion.widget.MotionLayout>

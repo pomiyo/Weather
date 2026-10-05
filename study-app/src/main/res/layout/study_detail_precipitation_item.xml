@@ -1,32 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_precipitation_item.xml
-  One precipitation column.
+  Educational reconstruction of detail_precipitation_item.xml - one precipitation column.
+
+  Session 3 rewrite. The order was inverted: amount on top, time at the bottom. The
+  original is time -> graph -> amount, so the hour labels form a row along the bottom of
+  the card and the measured amounts sit directly under each bar.
+
+  Type is the original's too: the hour is Gray 400 at 10sp, the amount White 600 at 10sp -
+  same size, different weight and colour, so the number reads as the value and the hour as
+  its label. Both were previously the shared 13sp caption.
+
+  KNOWN DIVERGENCE - the container.
+
+  The original's detail_precipitation_view_holder.xml hosts these columns in a horizontal
+  LinearLayout with layout_width="0dp" and a weight, so the columns divide the card evenly
+  and the card can also hold a "mm" unit label, heavy/light rain glyphs and gridline Views
+  alongside them. The reconstruction uses a RecyclerView, where layout_weight has no effect
+  and 0dp collapses the item to nothing - which is exactly what happened when this was
+  first written as a weighted item.
+
+  A fixed width is used here so the card renders; converting the container to the original's
+  weighted LinearLayout is tracked in reports/visual-comparison.md.
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_height="wrap_content"
+    android:id="@+id/item_container"
     android:layout_width="@dimen/study_precipitation_item_width"
+    android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:gravity="center_horizontal"
     android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/precipitation_amount"
-        android:layout_width="match_parent"
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/precipitation_time"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.10sp" />
 
     <dev.local.weatherstudy.app.detail.view.StudyPrecipitationBar
         android:id="@+id/precipitation_bar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/study_precipitation_bar_height" />
+        android:layout_height="@dimen/study_detail_precipitation_graph_height"
+        android:layout_marginTop="@dimen/study_detail_precipitation_graph_margin_top" />
 
-    <TextView
-        android:id="@+id/precipitation_time"
-        android:layout_width="match_parent"
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/precipitation_amount"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+        android:maxLines="1"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.10sp" />
 
 </LinearLayout>

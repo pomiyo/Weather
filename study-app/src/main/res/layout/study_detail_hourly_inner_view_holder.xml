@@ -1,54 +1,155 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_hourly_inner_view_holder.xml
-  One hour. The bezier view is sized to the full row height and draws only its own curve slice.
+  Educational reconstruction of detail_hourly_inner_view_holder.xml - one hour.
+
+  Session 3 rewrite. The previous version stacked
+      time -> icon -> precipitation -> graph -> temperature
+  which puts the percentage above the curve and the temperature below it. The original is
+      time -> icon -> temperature -> graph -> precipitation -> wind
+  so the temperature sits directly above the curve it labels and the percentages form a
+  single row along the bottom - which is what reference-ui/home.png shows.
+
+  Three structural details from the original, reproduced:
+
+  1. The root is a vertical LinearLayout with minWidth, NOT a fixed width. Hours are sized
+     by their content and only prevented from collapsing below 47.4dp, so a locale with
+     wider time labels widens the cells instead of truncating them.
+
+  2. `temp` and `sun` are two views overlaid in a FrameLayout, not one view whose text
+     changes. At sunrise and sunset the hour shows a label in place of the temperature, and
+     overlaying lets the two carry different text appearances - 16sp weight 600 for the
+     temperature, 12sp weight 600 for the sun label - without re-styling at bind time.
+
+  3. The icon sits in its own FrameLayout so it can be centred independently of the cell
+     width.
+
+  Text appearances are the original's: time and precipitation are Gray 400 at 10sp - much
+  smaller and dimmer than the previous reconstruction's shared 13sp caption - while the
+  temperature is White 600 at 16sp. That contrast is most of what makes the strip read
+  correctly.
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/hourly_inner_container"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_width="@dimen/study_hourly_item_width"
     android:clipChildren="false"
+    android:minWidth="@dimen/study_detail_hourly_view_min_width"
     android:orientation="vertical">
 
-    <TextView
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/hourly_time"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
-
-    <ImageView
-        android:id="@+id/hourly_icon"
-        android:layout_width="@dimen/study_hourly_icon_size"
-        android:layout_height="@dimen/study_hourly_icon_size"
         android:layout_gravity="center_horizontal"
-        android:contentDescription="@null" />
+        android:layout_marginStart="@dimen/study_detail_hourly_item_time_margin_horizontal"
+        android:layout_marginEnd="@dimen/study_detail_hourly_item_time_margin_horizontal"
+        android:ellipsize="end"
+        android:focusable="false"
+        android:gravity="center"
+        android:maxLines="1"
+        android:minHeight="@dimen/study_detail_hourly_time_min_height"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.10sp" />
 
-    <TextView
-        android:id="@+id/hourly_precipitation"
+    <FrameLayout
+        android:id="@+id/hourly_image_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/study_detail_hourly_view_weather_image_margin_top"
+        android:layout_marginBottom="@dimen/study_detail_hourly_view_weather_image_margin_bottom">
+
+        <ImageView
+            android:id="@+id/hourly_icon"
+            android:layout_width="@dimen/study_detail_hourly_view_weather_image_size"
+            android:layout_height="@dimen/study_detail_hourly_view_weather_image_size"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:focusable="false" />
+    </FrameLayout>
+
+    <!-- temperature and sun label occupy the same slot; see note 2 above -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
+        android:layout_gravity="center_vertical">
+
+        <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+            android:id="@+id/hourly_temperature"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.16sp" />
+
+        <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+            android:id="@+id/hourly_sun"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.12sp"
+            android:visibility="gone" />
+    </FrameLayout>
 
     <dev.local.weatherstudy.app.detail.view.StudyBezierLineGraphItemView
         android:id="@+id/hourly_graph"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/study_hourly_graph_height" />
+        android:layout_height="@dimen/study_detail_hourly_view_chart_height" />
 
-    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
-        android:id="@+id/hourly_temperature"
+    <LinearLayout
+        android:id="@+id/hourly_precipitation_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textAppearance="@style/Study.TextAppearance.CardValue" />
+        android:gravity="center_horizontal"
+        android:orientation="horizontal">
 
-    <dev.local.weatherstudy.app.detail.view.StudyWindGraph
-        android:id="@+id/hourly_wind"
-        android:layout_width="@dimen/study_hourly_wind_size"
-        android:layout_height="@dimen/study_hourly_wind_size"
+        <ImageView
+            android:id="@+id/hourly_precipitation_icon"
+            android:layout_width="10dp"
+            android:layout_height="13dp"
+            android:layout_gravity="center_vertical"
+            android:contentDescription="@null"
+            android:src="@drawable/study_ic_umbrella" />
+
+        <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+            android:id="@+id/hourly_precipitation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="1dp"
+            android:ellipsize="end"
+            android:gravity="start|center"
+            android:maxLines="1"
+            android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.10sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/hourly_wind_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:visibility="gone" />
+        android:layout_marginTop="@dimen/study_detail_hourly_view_deco_wind_layout_margin_top"
+        android:focusable="false"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <dev.local.weatherstudy.app.detail.view.StudyWindGraph
+            android:id="@+id/hourly_wind"
+            android:layout_width="@dimen/study_detail_hourly_view_deco_wind_item_image_size"
+            android:layout_height="@dimen/study_detail_hourly_view_deco_wind_item_image_size" />
+
+        <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+            android:id="@+id/hourly_wind_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/study_detail_hourly_view_deco_wind_item_text_margin_top"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.10sp" />
+    </LinearLayout>
 
 </LinearLayout>

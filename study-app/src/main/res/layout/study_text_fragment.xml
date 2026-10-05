@@ -54,7 +54,7 @@
                 android:gravity="start|center_vertical"
                 android:paddingHorizontal="24dp"
                 android:textAllCaps="false"
-                android:textColor="#FFFFFFFF"
+                android:textColor="@color/study_oneui_text_primary"
                 android:textSize="17sp"
                 android:visibility="gone" />
         </LinearLayout>

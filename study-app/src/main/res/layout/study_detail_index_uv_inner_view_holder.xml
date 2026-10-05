@@ -1,43 +1,97 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Educational reconstruction of detail_index_uv_inner_view_holder.xml
-  Index row with its Canvas graph: StudyUvGraph.
+  Educational reconstruction of detail_index_uv_inner_view_holder.xml.
+
+  Session 3 rewrite. All six variants were previously the same LinearLayout template with a
+  132dp minHeight, an XML background and 22sp values. The four graph-bearing tiles are 190dp, more than twice the plain ones, with their own larger paddings and a StudyUvGraph filling the lower half.
 -->
-<LinearLayout
+<dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/study_card_margin"
-    android:background="@drawable/study_card_background"
-    android:minHeight="132dp"
-    android:orientation="vertical"
-    android:padding="@dimen/study_card_padding">
+    android:focusable="true"
+    android:minHeight="@dimen/study_detail_large_index_height"
+    android:paddingTop="@dimen/study_detail_large_index_padding_top"
+    android:paddingBottom="@dimen/study_detail_large_index_padding_bottom">
 
-    <TextView
+    <ImageView
+        android:id="@+id/index_icon"
+        android:layout_width="@dimen/study_detail_index_image_size"
+        android:layout_height="@dimen/study_detail_index_image_size"
+        android:contentDescription="@null"
+        android:layout_marginStart="@dimen/study_detail_large_index_margin_horizontal"
+        app:layout_constraintBottom_toTopOf="@id/small_index_barrier"
+        app:layout_constraintEnd_toStartOf="@id/index_title"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/study_detail_white_text_color" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/index_title"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="6dp"
-        android:textAppearance="@style/Study.TextAppearance.CardTitle" />
+        android:layout_marginStart="@dimen/study_detail_index_title_margin_start"
+        android:layout_marginEnd="@dimen/study_detail_large_index_margin_horizontal"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.Gray.11sp"
+        app:layout_constraintBottom_toTopOf="@id/small_index_barrier"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/index_icon"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/small_index_barrier"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="index_icon,index_title" />
+
+    <!-- the sentence under the title: White 400 at 14sp, up to two lines -->
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/index_level"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/study_detail_large_index_description_margin_top"
+        android:layout_marginHorizontal="@dimen/study_detail_large_index_margin_horizontal"
+        android:maxLines="2"
+        android:textAlignment="viewStart"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.400.White.14sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/small_index_barrier" />
 
     <dev.local.weatherstudy.app.detail.view.StudyUvGraph
         android:id="@+id/index_graph"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/study_index_graph_height" />
+        android:layout_width="0dp"
+        android:layout_height="@dimen/study_detail_large_index_uv_graph_height"
+        android:layout_marginHorizontal="@dimen/study_detail_large_index_graph_margin_horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
 
-    <TextView
+    <!--
+      The value sits ABOVE the bar.
+
+      uv and humidity draw a 12dp horizontal bar rather than a gauge, so there is nothing to
+      put a number inside - the original places the value above it, with
+      detail_large_index_value_margin_bottom between them.
+    -->
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/index_value"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:textColor="#FFFFFFFF"
-        android:textSize="22sp" />
-
-    <TextView
-        android:id="@+id/index_level"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textAppearance="@style/Study.TextAppearance.CardCaption" />
-
-</LinearLayout>
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="10dp"
+        android:autoSizeMaxTextSize="20dp"
+        android:autoSizeStepGranularity="1dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20dp"
+        android:layout_marginBottom="@dimen/study_detail_large_index_value_margin_bottom"
+        app:layout_constraintBottom_toTopOf="@id/index_graph"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+</dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

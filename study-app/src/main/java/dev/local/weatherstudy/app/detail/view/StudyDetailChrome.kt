@@ -1,13 +1,21 @@
 package dev.local.weatherstudy.app.detail.view
 
 import android.content.Context
+import android.graphics.BlendMode
+import android.graphics.BlendModeColorFilter
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.RectF
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 import android.widget.FrameLayout
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
+import dev.local.weatherstudy.app.R
 import dev.local.weatherstudy.domain.type.StudyLifeStyleStateType
 
 /**
@@ -32,9 +40,68 @@ class StudyDetailCardConstraintLayout @JvmOverloads constructor(
     /** set by the view holder from the card's state; the adapter applies it to the LayoutParams */
     var prefersFullSpan: Boolean = false
 
+    private val roundMaskPath = Path()
+    private val viewClipBounds = Rect()
+    private val roundRadius: Float =
+        resources.getDimensionPixelSize(R.dimen.study_detail_card_radius).toFloat()
+
+    /**
+     * Darkens the card by compositing 20% black over its background with [BlendMode.SRC].
+     *
+     * The original exposes this as `setBgDarken` and uses it when a card needs to read as
+     * recessed against the artwork behind it. SRC (not SRC_OVER) means the filter replaces
+     * the drawable's own colour rather than tinting it.
+     */
+    var isBgDarken: Boolean = false
+        set(value) {
+            field = value
+            val bg = background ?: return
+            if (value) {
+                bg.colorFilter = BlendModeColorFilter(
+                    Color.argb(0.2f, 0f, 0f, 0f),
+                    BlendMode.SRC,
+                )
+            } else {
+                bg.clearColorFilter()
+            }
+        }
+
     init {
-        clipChildren = false
         clipToPadding = false
+        // The background is set HERE, not via android:background in the 22 card layouts.
+        // Centralising it is what lets every card share one surface definition; it is also
+        // why none of the detail_*_view_holder layouts carry a background attribute.
+        background = ContextCompat.getDrawable(context, R.drawable.study_card_background)
+        val outValue = TypedValue()
+        context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+        foreground = ContextCompat.getDrawable(context, outValue.resourceId)
+    }
+
+    /**
+     * Rounds the card by clipping the canvas to a round-rect path, rather than relying on
+     * the background shape alone.
+     *
+     * This matters because children can draw outside the background's bounds - the hourly
+     * card's bezier segments deliberately extend past their own cell. Clipping in
+     * dispatchDraw guarantees the corner is round regardless of what children do.
+     *
+     * The guard on a zero-sized clip is in the original too: a card measured at 0 would
+     * otherwise produce an empty path and blank the card.
+     */
+    override fun dispatchDraw(canvas: Canvas) {
+        if (canvas.getClipBounds(viewClipBounds)) {
+            if (viewClipBounds.width() != 0 && viewClipBounds.height() != 0) {
+                roundMaskPath.reset()
+                roundMaskPath.addRoundRect(
+                    RectF(viewClipBounds),
+                    roundRadius,
+                    roundRadius,
+                    Path.Direction.CW,
+                )
+                canvas.clipPath(roundMaskPath)
+            }
+        }
+        super.dispatchDraw(canvas)
     }
 }
 
@@ -129,7 +196,27 @@ class StudyDailyRangeBar @JvmOverloads constructor(
     }
 }
 
-/** Corresponds conceptually to the bar in `detail_precipitation_item.xml`. */
+/**
+ * Corresponds conceptually to the bar in `detail_precipitation_item.xml`.
+ *
+ * Session 3 rewrite. The previous version drew a full-height rounded "track" behind the
+ * fill and used `radius = width / 2`, which on a 48dp-wide, 64dp-tall cell produced a
+ * stadium shape - the column of overlapping ellipses visible in the pre-fix capture.
+ *
+ * The original is not a progress bar at all. `detail_precipitation_item.xml` is a
+ * ConstraintLayout holding:
+ *
+ *   * a movable horizontal Guideline, `gl_precipGraphBarTop`, whose percentage is set from
+ *     the amount;
+ *   * `graphFill`, a plain View constrained from that guideline down to the bottom, at
+ *     `layout_constraintWidth_percent="0.72"`;
+ *   * an ImageView of `rain_graph_top`, [CAP_HEIGHT_DP] tall and the same 72% wide, sitting
+ *     ON the guideline as the bar's cap.
+ *
+ * So: a 72%-wide square-sided column with a small rounded cap, no track behind it. That is
+ * reproduced here in one view because the three-view split exists to let the original
+ * animate the guideline, which the reconstruction does not do.
+ */
 class StudyPrecipitationBar @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -141,23 +228,36 @@ class StudyPrecipitationBar @JvmOverloads constructor(
     var barColor: Int = 0xFF4FC3F7.toInt()
         set(value) { field = value; invalidate() }
 
-    private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x22FFFFFF }
     private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val rect = RectF()
+    private val density = resources.displayMetrics.density
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val w = width.toFloat()
         val h = height.toFloat()
-        if (w <= 0f || h <= 0f) return
-        val radius = w / 2f
+        if (w <= 0f || h <= 0f || amountRatio <= 0f) return
 
-        rect.set(0f, 0f, w, h)
-        canvas.drawRoundRect(rect, radius, radius, trackPaint)
+        // layout_constraintWidth_percent = 0.72 in the original
+        val barWidth = w * BAR_WIDTH_PERCENT
+        val left = (w - barWidth) / 2f
+        val top = h * (1f - amountRatio)
 
         fillPaint.color = barColor
-        rect.set(0f, h * (1f - amountRatio), w, h)
-        canvas.drawRoundRect(rect, radius, radius, fillPaint)
+        rect.set(left, top, left + barWidth, h)
+        // The cap is the only rounded part; the sides and foot are square, which is what
+        // makes a row of these read as a bar chart rather than a row of pills.
+        val capRadius = CAP_HEIGHT_DP * density
+        canvas.drawRoundRect(rect, capRadius, capRadius, fillPaint)
+        // square off the foot that drawRoundRect just rounded
+        rect.set(left, top + capRadius, left + barWidth, h)
+        canvas.drawRect(rect, fillPaint)
+    }
+
+    private companion object {
+        const val BAR_WIDTH_PERCENT = 0.72f
+        /** detail_precipitation_graph_top_img_height */
+        const val CAP_HEIGHT_DP = 2.4f
     }
 }
 
