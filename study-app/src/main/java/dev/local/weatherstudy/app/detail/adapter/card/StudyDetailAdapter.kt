@@ -38,6 +38,8 @@ import dev.local.weatherstudy.ui.common.detail.state.StudyDetailState
 class StudyDetailAdapter(
     private val stateProvider: () -> StudyDetailState,
     private val onAction: (StudyDetailCardType) -> Unit,
+    /** a tile's own link, which only the Index card has - see StudyIndexInnerViewHolder */
+    private val onWebLink: (String) -> Unit = {},
 ) : RecyclerView.Adapter<StudyDetailCommonViewHolder>() {
 
     var cards: List<StudyDetailCardType> = emptyList()
@@ -57,7 +59,7 @@ class StudyDetailAdapter(
     override fun getItemId(position: Int): Long = cards[position].hashCode().toLong()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StudyDetailCommonViewHolder =
-        StudyDetailViewHolderFactory(parent, onAction).createViewHolder(viewType)
+        StudyDetailViewHolderFactory(parent, onAction, onWebLink).createViewHolder(viewType)
 
     /**
      * Sets the full-span flag and nothing else. Data binding is in

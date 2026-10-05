@@ -127,12 +127,27 @@ data class StudyDetailIndexItemState(
     val indexType: Int = 0,
     val titleText: String = "",
     val valueText: String = "",
+    /**
+     * The unit, carried separately from [valueText].
+     *
+     * The wind and pressure tiles stack two views inside their dial -
+     * `wind_speed_value` over `wind_speed_unit`, `pressure_value` over `pressure_unit` -
+     * and `WindIndexInnerViewHolder` binds `windState.speed` and `windState.unit` to
+     * them. The other five tiles put value and unit on one 26dp line and leave this
+     * empty.
+     */
+    val unitText: String = "",
     val levelText: String = "",
     val descriptionText: String = "",
     val graphValue: Float = 0f,
     val graphEntity: StudyIndexGraphViewEntity = StudyIndexGraphViewEntity(),
     /** meteorological degrees, for the wind compass only */
     val directionDegree: Float = 0f,
+    /**
+     * `DetailIndexItemState.linkUri`. A tile is clickable if and only if this is set -
+     * `IndexInnerViewHolder` does `setClickable(linkUri != Uri.EMPTY)` and attaches the
+     * listener inside that same `if`, so an unlinked tile is inert AND unanimated.
+     */
     val webUrl: String = "",
 )
 

@@ -356,9 +356,10 @@ class StudyAirIndexViewHolder(
 class StudyIndexViewHolder(
     itemView: View,
     onAction: (StudyDetailCardType) -> Unit,
+    onWebLink: (String) -> Unit = {},
 ) : StudyDetailCommonViewHolder(itemView, onAction) {
     override val cardType = StudyDetailCardType.Index
-    private val adapter = StudyIndexInnerAdapter()
+    private val adapter = StudyIndexInnerAdapter(onWebLink)
 
     init {
         // There is no title and no panel. The layout root is a plain ConstraintLayout and

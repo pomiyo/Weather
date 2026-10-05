@@ -47,8 +47,16 @@ class StudyTemperatureNotation @Inject constructor() {
         return value.roundToInt().toString()
     }
 
+    /**
+     * The header's high/low line.
+     *
+     * `PagerViewHolder` builds it as a bare string concatenation with the two arrow
+     * glyphs inline - `"↑" + maxTemp + " / ↓" + minTemp` - not from a string resource and
+     * not from a drawable, which is why the glyphs survive every locale. They were missing
+     * here, so the header read `28° / 22°` where the original reads `↑28° / ↓22°`.
+     */
     fun formatHighLow(highC: Double, lowC: Double, scale: Int): String =
-        "${format(highC, scale)} / ${format(lowC, scale)}"
+        "$HIGH_GLYPH${format(highC, scale)} / $LOW_GLYPH${format(lowC, scale)}"
 
     private fun toFahrenheit(celsius: Double) = celsius * 9.0 / 5.0 + FREEZING_F
 
@@ -56,6 +64,9 @@ class StudyTemperatureNotation @Inject constructor() {
         const val SCALE_CELSIUS = 0
         const val SCALE_FAHRENHEIT = 1
         const val DEGREE = "°"
+        /** the two glyphs `PagerViewHolder` concatenates into the high/low line */
+        const val HIGH_GLYPH = "↑"
+        const val LOW_GLYPH = "↓"
         const val INVALID_TEXT = "--"
         private const val FREEZING_F = 32.0
     }
@@ -122,6 +133,26 @@ class StudyTimeNotation @Inject constructor(
 /** Corresponds conceptually to the wind notations. */
 class StudyWindNotation @Inject constructor() {
 
+    /**
+     * The speed WITHOUT its unit, and [unitLabel] beside it.
+     *
+     * The wind tile needs the two separately: `detail_index_wind_inner_view_holder` has
+     * `wind_speed_value` and `wind_speed_unit` as two views stacked inside the compass,
+     * and `WindIndexInnerViewHolder` binds `windState.speed` and `windState.unit` to them.
+     * Joining them into one line is what pushed the text across the dial.
+     */
+    fun formatSpeedValue(speedKph: Double, unit: Int): String {
+        if (speedKph < 0) return StudyTemperatureNotation.INVALID_TEXT
+        val value = when (unit) {
+            UNIT_MPH -> speedKph * MPH_PER_KPH
+            UNIT_MS -> speedKph * MS_PER_KPH
+            else -> speedKph
+        }
+        return value.roundToInt().toString()
+    }
+
+    fun speedUnitLabel(unit: Int): String = unitLabel(unit)
+
     fun formatSpeed(speedKph: Double, unit: Int): String {
         if (speedKph < 0) return StudyTemperatureNotation.INVALID_TEXT
         val value = when (unit) {
@@ -167,6 +198,15 @@ class StudyIndexNotation @Inject constructor() {
 
     fun formatPercent(value: Double): String =
         if (value < 0) StudyTemperatureNotation.INVALID_TEXT else "${value.roundToInt()}%"
+
+    /** `pressure_value` and `pressure_unit`, the two stacked views inside the dial */
+    fun formatPressureValue(hPa: Double, unit: Int): String {
+        if (hPa <= 0) return StudyTemperatureNotation.INVALID_TEXT
+        val value = if (unit == PRESSURE_INHG) hPa * INHG_PER_HPA else hPa
+        return if (unit == PRESSURE_INHG) "%.2f".format(value) else value.roundToInt().toString()
+    }
+
+    fun pressureUnitLabel(unit: Int): String = if (unit == PRESSURE_INHG) "inHg" else "hPa"
 
     fun formatPressure(hPa: Double, unit: Int): String {
         if (hPa <= 0) return StudyTemperatureNotation.INVALID_TEXT

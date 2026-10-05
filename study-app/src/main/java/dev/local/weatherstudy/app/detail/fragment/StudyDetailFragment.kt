@@ -95,6 +95,9 @@ class StudyDetailFragment : Fragment(R.layout.study_detail_fragment) {
                     else StudyDetailAction.CardClicked(cardType),
                 )
             },
+            // an index tile's link. The ViewModel tracks it and posts OpenWebLink; the
+            // original's goToWeb does the same through DetailIntent.
+            onWebLink = { url -> viewModel.dispatch(StudyDetailAction.WebLinkClicked(url)) },
         )
 
         renderer = StudyDetailRenderer(
@@ -181,6 +184,7 @@ class StudyDetailFragment : Fragment(R.layout.study_detail_fragment) {
 
     private fun onSideEffect(effect: StudyDetailSideEffect) {
         when (effect) {
+            is StudyDetailSideEffect.OpenWebLink -> openInBrowser(effect.url)
             is StudyDetailSideEffect.ShowRefreshResult -> when (effect.result) {
                 StudyDetailRefreshResult.Failed -> toast(R.string.study_refresh_failed)
                 StudyDetailRefreshResult.NoNetwork -> toast(R.string.study_refresh_no_network)
@@ -189,6 +193,19 @@ class StudyDetailFragment : Fragment(R.layout.study_detail_fragment) {
             }
             else -> navigator.handle(findNavController(), effect)
         }
+    }
+
+    /**
+     * `GoToWebFromDetail` — an `ACTION_VIEW` on the link the state carried.
+     *
+     * Wrapped because a device with no browser throws `ActivityNotFoundException`, and a
+     * weather screen is not the place to crash over a missing browser.
+     */
+    private fun openInBrowser(url: String) {
+        if (url.isEmpty()) return
+        runCatching {
+            startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+        }.onFailure { toast(R.string.study_refresh_failed) }
     }
 
     private fun toast(messageRes: Int) =

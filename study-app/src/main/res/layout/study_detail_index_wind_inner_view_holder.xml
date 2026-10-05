@@ -73,29 +73,38 @@
         app:layout_constraintVertical_chainStyle="packed" />
 
     <!--
-      The value sits LOW inside the gauge, not centred on it.
+      The reading is TWO views stacked inside the compass, not one line across it.
 
-      The original stacks two views - wind_speed_value above wind_speed_unit - anchored to
-      the BOTTOM of the tile with a 32dp margin, which places them in the lower half of the
-      109dp compass, clear of the needle sweeping above. Centring them on the graph (tried
-      first) put the text straight through the needle.
+      `wind_speed_value` is 71dp wide, `wind_speed_unit` 59dp, both centred on the tile and
+      both Sec.600.White.20dp. The value's -2dp bottom margin pulls the unit up against it;
+      the unit's 32dp bottom margin is what holds the pair clear of the compass rim.
 
-      One view is used here because the reconstruction's state carries value and unit already
-      joined; the autosizing is kept because a long unit string is what it exists for.
+      This was one autosizing view bound to "7 km/h" and centred on the graph, which drew
+      the text straight through the needle at any speed with two digits - see the red box
+      in the session-4 review. The split is the original's, and it is also why the state
+      carries valueText and unitText separately.
     -->
     <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/index_value"
-        android:layout_width="0dp"
+        android:layout_width="@dimen/study_detail_large_index_wind_speed_value_area_width"
         android:layout_height="wrap_content"
-        android:autoSizeTextType="uniform"
-        android:autoSizeMinTextSize="10dp"
-        android:autoSizeMaxTextSize="26dp"
-        android:autoSizeStepGranularity="1dp"
         android:gravity="center"
         android:maxLines="1"
-        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.26dp"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20dp"
+        android:layout_marginBottom="@dimen/study_detail_large_index_wind_speed_value_margin_bottom"
+        app:layout_constraintBottom_toTopOf="@id/index_unit"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/index_unit"
+        android:layout_width="@dimen/study_detail_large_index_wind_speed_unit_area_width"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20dp"
         android:layout_marginBottom="@dimen/study_detail_large_index_wind_speed_unit_margin_bottom"
-        app:layout_constraintBottom_toBottomOf="@id/index_graph"
-        app:layout_constraintEnd_toEndOf="@id/index_graph"
-        app:layout_constraintStart_toStartOf="@id/index_graph" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 </dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

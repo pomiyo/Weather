@@ -234,6 +234,29 @@
     <dimen name="study_detail_large_index_dew_point_padding_bottom">15dp</dimen>
     <dimen name="study_detail_large_index_pressure_graph_radius">62dp</dimen>
     <dimen name="study_detail_large_index_pressure_graph_stroke_size">12dp</dimen>
+
+    <!--
+      The wind and pressure dials put the reading INSIDE themselves, as two views.
+
+      `wind_speed_value` (71dp wide) sits above `wind_speed_unit` (59dp) with a -2dp gap -
+      a negative margin, pulling the unit up against the number's descender line - and the
+      pair is anchored to the tile's bottom by the unit's own 32dp margin, which is what
+      lifts it clear of the compass's lower rim. Pressure is the same arrangement at 90dp
+      wide with a 20dp bottom margin, over a 140dp dial that hangs 27dp BELOW the tile
+      (detail_large_index_pressure_graph_margin_bottom is negative, and that is why the
+      gauge looks cropped by the card edge in the original too).
+
+      Both texts are Sec.600.White.20dp, not the 26dp the one-line tiles use.
+    -->
+    <dimen name="study_detail_large_index_wind_speed_value_area_width">71dp</dimen>
+    <dimen name="study_detail_large_index_wind_speed_unit_area_width">59dp</dimen>
+    <dimen name="study_detail_large_index_wind_speed_value_margin_bottom">-2dp</dimen>
+    <dimen name="study_detail_large_index_pressure_background_size">140dp</dimen>
+    <dimen name="study_detail_large_index_pressure_graph_margin_bottom">-27dp</dimen>
+    <dimen name="study_detail_large_index_pressure_text_area_width">90dp</dimen>
+    <dimen name="study_detail_large_index_pressure_unit_area_width">90dp</dimen>
+    <dimen name="study_detail_large_index_pressure_value_margin_bottom">-2dp</dimen>
+    <dimen name="study_detail_large_index_pressure_text_margin_bottom">20dp</dimen>
     <dimen name="study_detail_air_quality_card_one_line_height">90dp</dimen>
     <dimen name="study_detail_air_quality_card_two_line_height">190dp</dimen>
 

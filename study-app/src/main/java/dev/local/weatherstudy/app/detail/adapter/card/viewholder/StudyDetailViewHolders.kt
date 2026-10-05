@@ -125,6 +125,8 @@ abstract class StudyDetailCommonViewHolder(
 class StudyDetailViewHolderFactory(
     private val parent: ViewGroup,
     private val onAction: (StudyDetailCardType) -> Unit,
+    /** only the Index card uses it: its tiles carry their own links */
+    private val onWebLink: (String) -> Unit = {},
 ) {
     fun createViewHolder(viewType: Int): StudyDetailCommonViewHolder {
         val inflater = LayoutInflater.from(parent.context)
@@ -174,7 +176,9 @@ class StudyDetailViewHolderFactory(
             return StudyAirIndexViewHolder(view(R.layout.study_detail_air_index_view_holder), onAction)
         }
         if (viewType == StudyDetailCardType.Index.hashCode()) {
-            return StudyIndexViewHolder(view(R.layout.study_detail_index_view_holder), onAction)
+            return StudyIndexViewHolder(
+                view(R.layout.study_detail_index_view_holder), onAction, onWebLink,
+            )
         }
         if (viewType == StudyDetailCardType.Sun.hashCode()) {
             return StudySunViewHolder(view(R.layout.study_detail_sun_view_holder), onAction)

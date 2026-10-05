@@ -65,38 +65,41 @@
 
     <dev.local.weatherstudy.app.detail.view.StudyPressureGraph
         android:id="@+id/index_graph"
-        android:layout_width="0dp"
-        android:layout_height="@dimen/study_detail_large_index_wind_graph_size"
-        android:layout_marginHorizontal="@dimen/study_detail_large_index_graph_margin_horizontal"
+        android:layout_width="@dimen/study_detail_large_index_pressure_background_size"
+        android:layout_height="@dimen/study_detail_large_index_pressure_background_size"
+        android:layout_marginBottom="@dimen/study_detail_large_index_pressure_graph_margin_bottom"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintVertical_chainStyle="packed" />
 
     <!--
-      The value sits LOW inside the gauge, not centred on it.
-
-      The original stacks two views - wind_speed_value above wind_speed_unit - anchored to
-      the BOTTOM of the tile with a 32dp margin, which places them in the lower half of the
-      109dp compass, clear of the needle sweeping above. Centring them on the graph (tried
-      first) put the text straight through the needle.
-
-      One view is used here because the reconstruction's state carries value and unit already
-      joined; the autosizing is kept because a long unit string is what it exists for.
+      Value over unit, centred in the dial - the same arrangement as the wind tile, at 90dp
+      wide with a 20dp bottom margin. The dial itself is 140dp with a NEGATIVE 27dp bottom
+      margin, so it hangs below the tile and is cropped by the card's own corner radius.
+      That is the original's geometry, not an accident of ours.
     -->
     <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
         android:id="@+id/index_value"
-        android:layout_width="0dp"
+        android:layout_width="@dimen/study_detail_large_index_pressure_text_area_width"
         android:layout_height="wrap_content"
-        android:autoSizeTextType="uniform"
-        android:autoSizeMinTextSize="10dp"
-        android:autoSizeMaxTextSize="26dp"
-        android:autoSizeStepGranularity="1dp"
         android:gravity="center"
         android:maxLines="1"
-        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.26dp"
-        android:layout_marginBottom="@dimen/study_detail_large_index_wind_speed_unit_margin_bottom"
-        app:layout_constraintBottom_toBottomOf="@id/index_graph"
-        app:layout_constraintEnd_toEndOf="@id/index_graph"
-        app:layout_constraintStart_toStartOf="@id/index_graph" />
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20dp"
+        android:layout_marginBottom="@dimen/study_detail_large_index_pressure_value_margin_bottom"
+        app:layout_constraintBottom_toTopOf="@id/index_unit"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <dev.local.weatherstudy.app.common.view.StudySizeLimitedTextView
+        android:id="@+id/index_unit"
+        android:layout_width="@dimen/study_detail_large_index_pressure_unit_area_width"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textAppearance="@style/Study.TextAppearance.Detail.Sec.600.White.20dp"
+        android:layout_marginBottom="@dimen/study_detail_large_index_pressure_text_margin_bottom"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 </dev.local.weatherstudy.app.detail.view.StudyDetailCardConstraintLayout>

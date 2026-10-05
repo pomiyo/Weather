@@ -280,12 +280,13 @@ class StudyDetailIndexCardStateProvider @Inject constructor(
                 indexType = type,
                 titleText = titleFor(type),
                 valueText = valueFor(type, index.value, tempScale),
+                unitText = unitFor(type),
                 levelText = levelFor(type, index),
                 descriptionText = index.description,
                 graphValue = normalise(type, index.value),
                 graphEntity = if (type == StudyIndexType.UV) UV_BANDS else StudyIndexGraphViewEntity(),
                 directionDegree = index.extra.toFloatOrNull() ?: windNotation.toDegree(index.levelText),
-                webUrl = index.webUrl,
+                webUrl = index.webUrl.ifEmpty { sourceUrl(weather) },
             )
         }
         return StudyDetailIndexCardState(isVisible = items.isNotEmpty(), items = items)
@@ -313,11 +314,39 @@ class StudyDetailIndexCardStateProvider @Inject constructor(
         else -> ""
     }
 
+    /**
+     * Where a tile's tap goes.
+     *
+     * `IndexInnerViewHolder` makes a tile clickable only when its `linkUri` is set, and
+     * opens the FORECAST PROVIDER's page for that measurement. Open-Meteo publishes no
+     * per-index page, so the nearest honest link is its forecast for this location - the
+     * place the number actually came from. A deviation of destination, not of mechanism:
+     * the tile is still clickable iff a link exists, and the link still comes from the
+     * state rather than from the view.
+     */
+    private fun sourceUrl(weather: StudyWeather): String {
+        val lat = weather.location.latitude
+        val lon = weather.location.longitude
+        val invalid = dev.local.weatherstudy.domain.entity.weather.StudyLocation.INVALID_COORDINATE
+        if (lat == invalid && lon == invalid) return ""
+        return "https://open-meteo.com/en/docs#latitude=$lat&longitude=$lon"
+    }
+
+    /** the unit half of the two stacked views inside the wind and pressure dials */
+    private fun unitFor(type: Int) = when (type) {
+        StudyIndexType.PRESSURE -> indexNotation.pressureUnitLabel(StudyIndexNotation.PRESSURE_HPA)
+        StudyIndexType.WIND -> windNotation.speedUnitLabel(StudyWindNotation.UNIT_KPH)
+        else -> ""
+    }
+
     private fun valueFor(type: Int, value: Double, tempScale: Int) = when (type) {
         StudyIndexType.UV -> indexNotation.formatUvIndex(value)
         StudyIndexType.HUMIDITY -> indexNotation.formatPercent(value)
-        StudyIndexType.PRESSURE -> indexNotation.formatPressure(value, StudyIndexNotation.PRESSURE_HPA)
-        StudyIndexType.WIND -> windNotation.formatSpeed(value, StudyWindNotation.UNIT_KPH)
+        // wind and pressure carry their unit in [unitFor] instead: the two go in
+        // separate views, stacked inside the dial
+        StudyIndexType.PRESSURE ->
+            indexNotation.formatPressureValue(value, StudyIndexNotation.PRESSURE_HPA)
+        StudyIndexType.WIND -> windNotation.formatSpeedValue(value, StudyWindNotation.UNIT_KPH)
         StudyIndexType.VISIBILITY -> indexNotation.formatDistance(value, StudyIndexNotation.DISTANCE_KM)
         StudyIndexType.DEW_POINT -> temperatureNotation.format(value, tempScale)
         StudyIndexType.PRECIPITATION_AMOUNT ->

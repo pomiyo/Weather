@@ -6,6 +6,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import dev.local.weatherstudy.app.R
 import dev.local.weatherstudy.ui.common.resource.StudyIconProvider
+import dev.local.weatherstudy.ui.common.usecase.notation.StudyTemperatureNotation
 import dev.local.weatherstudy.app.detail.view.*
 import dev.local.weatherstudy.domain.type.StudyIndexType
 import dev.local.weatherstudy.ui.common.detail.state.*
@@ -84,18 +85,51 @@ class StudyHourlyInnerViewHolder(
     }
 }
 
-/** `IndexInnerViewHolder` — the base row the four graph-bearing variants extend. */
-open class StudyIndexInnerViewHolder(itemView: View) :
-    StudyInnerViewHolder<StudyDetailIndexItemState>(itemView) {
+/**
+ * `IndexInnerViewHolder` — the base row the four graph-bearing variants extend.
+ *
+ * ### The tile is clickable, and the link decides it
+ *
+ * ```java
+ * container.setClickable(!linkUri.equals(Uri.EMPTY));
+ * if (container.isClickable()) {
+ *     DetailBindingKt.startContextMenu(container, linkUri, viewModel.isDesktopMode());
+ *     container.setOnClickListener(v -> viewModel.getIntent()
+ *         .goToWeb(linkUri, state.getTrackingEvent(), state.getTrackingEventDetail()));
+ * }
+ * ```
+ *
+ * Both halves matter. A tile with no link is left NOT clickable, which in Android also
+ * means no ripple and no press animation — so an inert tile looks inert, deliberately.
+ * And the listener is attached inside the same `if`, which is why this reconstruction had
+ * neither: nothing ever set a link, so nothing was ever clickable. Same root cause as the
+ * cards in pass 6 — a View with no click listener is not clickable, and Android draws no
+ * feedback for it.
+ */
+open class StudyIndexInnerViewHolder(
+    itemView: View,
+    private val onWebLink: (String) -> Unit = {},
+) : StudyInnerViewHolder<StudyDetailIndexItemState>(itemView) {
 
     protected val title: TextView = itemView.findViewById(R.id.index_title)
     protected val value: TextView = itemView.findViewById(R.id.index_value)
+    protected val unit: TextView? = itemView.findViewById(R.id.index_unit)
     protected val level: TextView? = itemView.findViewById(R.id.index_level)
     private val icon: ImageView? = itemView.findViewById(R.id.index_icon)
+    private val container: View = itemView.findViewById(R.id.container) ?: itemView
 
     override fun bind(item: StudyDetailIndexItemState) {
         title.text = item.titleText
         value.text = item.valueText
+        // empty for the five one-line tiles; the dials put it in its own view
+        unit?.text = item.unitText
+
+        container.isClickable = item.webUrl.isNotEmpty()
+        if (container.isClickable) {
+            container.setOnClickListener { onWebLink(item.webUrl) }
+        } else {
+            container.setOnClickListener(null)
+        }
 
         // The big line under the title is the DESCRIPTION, not the level.
         //
@@ -115,7 +149,8 @@ open class StudyIndexInnerViewHolder(itemView: View) :
 }
 
 /** `UvIndexInnerViewHolder` — adds StudyUvGraph. */
-class StudyUvIndexInnerViewHolder(itemView: View) : StudyIndexInnerViewHolder(itemView) {
+class StudyUvIndexInnerViewHolder(itemView: View, onWebLink: (String) -> Unit = {}) :
+    StudyIndexInnerViewHolder(itemView, onWebLink) {
     private val graph: StudyUvGraph = itemView.findViewById(R.id.index_graph)
     override fun bind(item: StudyDetailIndexItemState) {
         super.bind(item)
@@ -125,7 +160,8 @@ class StudyUvIndexInnerViewHolder(itemView: View) : StudyIndexInnerViewHolder(it
 }
 
 /** `HumidityIndexInnerViewHolder`. */
-class StudyHumidityIndexInnerViewHolder(itemView: View) : StudyIndexInnerViewHolder(itemView) {
+class StudyHumidityIndexInnerViewHolder(itemView: View, onWebLink: (String) -> Unit = {}) :
+    StudyIndexInnerViewHolder(itemView, onWebLink) {
     private val graph: StudyHumidityGraph = itemView.findViewById(R.id.index_graph)
     override fun bind(item: StudyDetailIndexItemState) {
         super.bind(item)
@@ -134,33 +170,30 @@ class StudyHumidityIndexInnerViewHolder(itemView: View) : StudyIndexInnerViewHol
 }
 
 /** `PressureIndexInnerViewHolder` — tendency is a separate provider-sent value. */
-class StudyPressureIndexInnerViewHolder(itemView: View) : StudyIndexInnerViewHolder(itemView) {
+class StudyPressureIndexInnerViewHolder(itemView: View, onWebLink: (String) -> Unit = {}) :
+    StudyIndexInnerViewHolder(itemView, onWebLink) {
     private val graph: StudyPressureGraph = itemView.findViewById(R.id.index_graph)
     override fun bind(item: StudyDetailIndexItemState) {
         super.bind(item)
         graph.value = item.graphValue
-        graph.tendency = item.graphEntity.activeBandIndex
     }
 }
 
 /** `WindIndexInnerViewHolder`. */
-class StudyWindIndexInnerViewHolder(itemView: View) : StudyIndexInnerViewHolder(itemView) {
+class StudyWindIndexInnerViewHolder(itemView: View, onWebLink: (String) -> Unit = {}) :
+    StudyIndexInnerViewHolder(itemView, onWebLink) {
     private val graph: StudyWindGraph = itemView.findViewById(R.id.index_graph)
     override fun bind(item: StudyDetailIndexItemState) {
         super.bind(item)
         graph.directionDegree = item.directionDegree
-        // a floor on the length: a light breeze still has a direction worth reading
-        graph.speedRatio = item.graphValue.coerceAtLeast(MIN_ARROW_RATIO)
+        // the original's arrow does not scale with speed - it is one bitmap, rotated
         graph.isCalm = item.graphValue <= 0f
-    }
-
-    private companion object {
-        const val MIN_ARROW_RATIO = 0.45f
     }
 }
 
 /** `VisibilityIndexInnerViewHolder` / `DewPointIndexInnerViewHolder` — no graph. */
-class StudyPlainIndexInnerViewHolder(itemView: View) : StudyIndexInnerViewHolder(itemView)
+class StudyPlainIndexInnerViewHolder(itemView: View, onWebLink: (String) -> Unit = {}) :
+    StudyIndexInnerViewHolder(itemView, onWebLink)
 
 /** `BottomIndexInnerViewHolder` — sunrise/sunset/moon cells. */
 class StudyBottomIndexInnerViewHolder(itemView: View) :
@@ -297,10 +330,24 @@ class StudyDailyInnerViewHolder(itemView: View) :
     private val low: TextView = itemView.findViewById(R.id.daily_low)
     private val high: TextView = itemView.findViewById(R.id.daily_high)
 
+    /**
+     * ### A deliberate deviation: the ↑ / ↓ glyphs
+     *
+     * The original ends each row with two bare numbers. `DailyViewHolder` sets both
+     * `tvHigh` and `tvLow` to `detail_white_text_color` at Sec.600.White.16sp and adds
+     * nothing else, so "28° 22°" is exactly what Samsung draws, and position is the only
+     * thing distinguishing the high from the low.
+     *
+     * The glyphs are added here at the user's request, borrowed from the app's own idiom
+     * rather than invented: `PagerViewHolder` builds the header's high/low line as
+     * `"↑" + maxTemp + " / ↓" + minTemp`, so this screen already carries them 300dp
+     * further up. This is the one place the reconstruction knowingly reads better than
+     * the original; revert by dropping the two prefixes.
+     */
     override fun bind(item: StudyDetailDailyItemState) {
         day.text = item.dayText
-        high.text = item.highText
-        low.text = item.lowText
+        high.text = StudyTemperatureNotation.HIGH_GLYPH + item.highText
+        low.text = StudyTemperatureNotation.LOW_GLYPH + item.lowText
 
         // The droplet goes with its value: a row with no chance to report shows neither,
         // rather than a lone glyph.

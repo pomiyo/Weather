@@ -49,8 +49,10 @@ class StudyHourlyInnerAdapter(
  * The only inner adapter with real view types: the index row's layout depends on which
  * measurement it is, because four of the seven carry their own Canvas view.
  */
-class StudyIndexInnerAdapter :
-    ListAdapter<StudyDetailIndexItemState, StudyIndexInnerViewHolder>(valueDiff()) {
+class StudyIndexInnerAdapter(
+    /** `goToWeb` — the tile's link, routed through the ViewModel so the tap is tracked */
+    private val onWebLink: (String) -> Unit = {},
+) : ListAdapter<StudyDetailIndexItemState, StudyIndexInnerViewHolder>(valueDiff()) {
 
     override fun getItemViewType(position: Int) = getItem(position).indexType
 
@@ -58,19 +60,19 @@ class StudyIndexInnerAdapter :
         val t = dev.local.weatherstudy.domain.type.StudyIndexType
         return when (viewType) {
             t.UV -> StudyUvIndexInnerViewHolder(
-                parent.inflate(R.layout.study_detail_index_uv_inner_view_holder))
+                parent.inflate(R.layout.study_detail_index_uv_inner_view_holder), onWebLink)
             t.HUMIDITY -> StudyHumidityIndexInnerViewHolder(
-                parent.inflate(R.layout.study_detail_index_humidity_inner_view_holder))
+                parent.inflate(R.layout.study_detail_index_humidity_inner_view_holder), onWebLink)
             t.PRESSURE -> StudyPressureIndexInnerViewHolder(
-                parent.inflate(R.layout.study_detail_index_pressure_inner_view_holder))
+                parent.inflate(R.layout.study_detail_index_pressure_inner_view_holder), onWebLink)
             t.WIND -> StudyWindIndexInnerViewHolder(
-                parent.inflate(R.layout.study_detail_index_wind_inner_view_holder))
+                parent.inflate(R.layout.study_detail_index_wind_inner_view_holder), onWebLink)
             t.VISIBILITY -> StudyPlainIndexInnerViewHolder(
-                parent.inflate(R.layout.study_detail_index_visibility_inner_view_holder))
+                parent.inflate(R.layout.study_detail_index_visibility_inner_view_holder), onWebLink)
             t.DEW_POINT -> StudyPlainIndexInnerViewHolder(
-                parent.inflate(R.layout.study_detail_index_dew_point_inner_view_holder))
+                parent.inflate(R.layout.study_detail_index_dew_point_inner_view_holder), onWebLink)
             else -> StudyIndexInnerViewHolder(
-                parent.inflate(R.layout.study_detail_index_inner_view_holder))
+                parent.inflate(R.layout.study_detail_index_inner_view_holder), onWebLink)
         }
     }
 

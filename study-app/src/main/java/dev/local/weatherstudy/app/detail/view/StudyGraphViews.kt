@@ -8,6 +8,7 @@ import android.graphics.PathMeasure
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import dev.local.weatherstudy.app.R
 import dev.local.weatherstudy.ui.common.detail.state.StudyIndexGraphViewEntity
 import kotlin.math.cos
 import kotlin.math.min
@@ -380,8 +381,24 @@ class StudyAirQualityBar @JvmOverloads constructor(
  * Corresponds conceptually to:
  * com.sec.android.daemonapp.app.detail.view.HumidityGraph
  *
- * Observed responsibility: a circular fill gauge. Reconstructed as an arc sweep, which
- * is the simplest construction that matches a "percentage of a ring" reading.
+ * Session 4 rewrite. This drew a 270° ARC, on the assumption that "percentage of a ring"
+ * was the reading. It is not a ring at all - it is a 12dp-high rounded BAR, and the
+ * mismatch was glaring: `detail_large_index_humidity_graph_height` is 12dp, so
+ * `min(width, height) / 2` made a 6dp circle out of a view that is as wide as the tile.
+ * The humidity tile rendered a small blue crescent under a centred number.
+ *
+ * ```java
+ * float r = Math.min(getWidth(), getHeight()) / 2.0f;              // the bar's own radius
+ * float w = getWidth() * clamp(value / 100f, 0f, 100f);
+ * canvas.drawRoundRect(0, 0, getWidth(), getHeight(), r, r, whiteBgPaint);   // 40% white
+ * paint.setShader(new LinearGradient(0, 0, w, getHeight(), colors, positions, CLAMP));
+ * canvas.drawRoundRect(0, 0, w, getHeight(), r, r, paint);
+ * ```
+ *
+ * Two details worth keeping. The track is white at **alpha 102**, not a colour resource -
+ * which is why it reads the same against every one of the eleven backgrounds. And the
+ * gradient's end point is the FILL's width, not the view's, so the two stops always span
+ * the filled part however short it is; at 10% humidity you still see the whole ramp.
  */
 class StudyHumidityGraph @JvmOverloads constructor(
     context: Context,
@@ -389,42 +406,45 @@ class StudyHumidityGraph @JvmOverloads constructor(
     defStyleAttr: Int = 0,
 ) : View(context, attrs, defStyleAttr) {
 
+    /** 0..1 */
     var value: Float = 0f
         set(value) { field = value.coerceIn(0f, 1f); invalidate() }
 
-    var fillColor: Int = 0xFF4FC3F7.toInt()
-        set(value) { field = value; invalidate() }
-
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = STROKE_WIDTH
-        color = 0x33FFFFFF
+        color = TRACK_COLOR
+        style = Paint.Style.FILL
     }
-    private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = STROKE_WIDTH
-        strokeCap = Paint.Cap.ROUND
-    }
-    private val bounds = RectF()
+    private val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private var shaderWidth = -1f
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val size = min(width, height).toFloat()
-        if (size <= 0f) return
-        val inset = STROKE_WIDTH / 2f + 1f
-        val left = (width - size) / 2f + inset
-        val top = (height - size) / 2f + inset
-        bounds.set(left, top, left + size - inset * 2f, top + size - inset * 2f)
+        val w = width.toFloat()
+        val h = height.toFloat()
+        if (w <= 0f || h <= 0f) return
+        val radius = min(w, h) / 2f
+        canvas.drawRoundRect(0f, 0f, w, h, radius, radius, trackPaint)
 
-        canvas.drawArc(bounds, START_DEGREES, SWEEP_DEGREES, false, trackPaint)
-        fillPaint.color = fillColor
-        canvas.drawArc(bounds, START_DEGREES, SWEEP_DEGREES * value, false, fillPaint)
+        val filled = w * value
+        if (filled <= 0f) return
+        if (shaderWidth != filled) {
+            shaderWidth = filled
+            fillPaint.shader = android.graphics.LinearGradient(
+                0f, 0f, filled, h,
+                intArrayOf(GRADIENT_MIN, GRADIENT_MAX),
+                floatArrayOf(0f, 1f),
+                android.graphics.Shader.TileMode.CLAMP,
+            )
+        }
+        canvas.drawRoundRect(0f, 0f, filled, h, radius, radius, fillPaint)
     }
 
     private companion object {
-        const val STROKE_WIDTH = 10f
-        const val START_DEGREES = 135f
-        const val SWEEP_DEGREES = 270f
+        /** white at alpha 102 - the original builds it in code, not from a colour */
+        const val TRACK_COLOR = 0x66FFFFFF.toInt()
+        /** `humidity_graph_gradient_min` / `_max` */
+        const val GRADIENT_MIN = 0xFFCDFAFF.toInt()
+        const val GRADIENT_MAX = 0xFF6EDBFC.toInt()
     }
 }
 
@@ -432,10 +452,29 @@ class StudyHumidityGraph @JvmOverloads constructor(
  * Corresponds conceptually to:
  * com.sec.android.daemonapp.app.detail.view.PressureGraph
  *
- * Observed responsibility: a dial with a tendency arrow. The tendency
- * (rising / falling / steady) is a separate banded value —
- * `StudyIndexLevel.Pressure` — not derived from the reading, because the provider sends
- * it. That is why this view takes two inputs.
+ * Session 4 rewrite. This drew a needle from the centre of a 270° track, with a tendency
+ * arrow beside it - a car dashboard, invented here. The original has no needle at all:
+ *
+ * ```java
+ * canvas.drawBitmap(scaled(R.drawable.pressure_bg, 140dp, 140dp), 0, 0, null);
+ * paint.setColor(col_50_FAFAFA);  paint.setStyle(STROKE);
+ * paint.setStrokeWidth(detail_large_index_pressure_graph_stroke_size);   // 12dp
+ * paint.setStrokeCap(ROUND);
+ * path.arcTo(rect(radius 62dp), -210f, calculateAngle(value), false);    // sweep 0..240
+ * canvas.drawPath(path, paint);
+ * ```
+ *
+ * A ticked 240° track, drawn from artwork, with a 12dp half-transparent white arc laid
+ * over the part the reading has reached - starting at -210°, which puts 0 at the lower
+ * left and full scale at the lower right. The scale is absolute, not relative:
+ * `calculateAngle` maps 960.04..1066.71 hPa onto 0..240°, so a reading near sea-level
+ * standard sits just under halfway round whatever the day's range is.
+ *
+ * The tendency (rising / falling / steady) is NOT drawn here - it is the tile's
+ * description line, "Currently falling rapidly", which is why `levelFor` produces it.
+ *
+ * The artwork is a LOCAL STUDY RESOURCE. Without it the ticked track is drawn
+ * procedurally, so a tree without the assets still renders a gauge.
  */
 class StudyPressureGraph @JvmOverloads constructor(
     context: Context,
@@ -443,91 +482,53 @@ class StudyPressureGraph @JvmOverloads constructor(
     defStyleAttr: Int = 0,
 ) : View(context, attrs, defStyleAttr) {
 
-    var value: Float = 0.5f
+    /** 0..1 across the absolute 960.04..1066.71 hPa scale */
+    var value: Float = 0f
         set(value) { field = value.coerceIn(0f, 1f); invalidate() }
 
-    /** `StudyIndexLevel.Pressure.RISING` / `FALLING` / `STEADY` */
-    var tendency: Int = dev.local.weatherstudy.domain.type.StudyIndexLevel.Pressure.STEADY
-        set(value) { field = value; invalidate() }
-
-    var needleColor: Int = 0xFFFFFFFF.toInt()
-        set(value) { field = value; invalidate() }
-
+    private val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        color = ARC_COLOR
+    }
     private val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = STROKE_WIDTH
-        color = 0x33FFFFFF
-    }
-    private val needlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = NEEDLE_STROKE
         strokeCap = Paint.Cap.ROUND
-    }
-    private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = ARROW_STROKE
-        strokeCap = Paint.Cap.ROUND
+        color = TRACK_COLOR
     }
     private val bounds = RectF()
-    private val arrowPath = Path()
+    private val background = StudyStudyResource.drawable(context, "study_pressure_bg")
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val size = min(width, height).toFloat()
         if (size <= 0f) return
-        val cx = width / 2f
-        val cy = height / 2f
-        val radius = size / 2f - STROKE_WIDTH
-        bounds.set(cx - radius, cy - radius, cx + radius, cy + radius)
 
-        canvas.drawArc(bounds, START_DEGREES, SWEEP_DEGREES, false, trackPaint)
+        val stroke = resources.getDimension(R.dimen.study_detail_large_index_pressure_graph_stroke_size)
+        val radius = resources.getDimension(R.dimen.study_detail_large_index_pressure_graph_radius)
+        arcPaint.strokeWidth = stroke
+        trackPaint.strokeWidth = stroke
 
-        val angleDegrees = START_DEGREES + SWEEP_DEGREES * value
-        val angleRadians = Math.toRadians(angleDegrees.toDouble())
-        needlePaint.color = needleColor
-        canvas.drawLine(
-            cx, cy,
-            cx + (radius * NEEDLE_LENGTH * cos(angleRadians)).toFloat(),
-            cy + (radius * NEEDLE_LENGTH * sin(angleRadians)).toFloat(),
-            needlePaint,
-        )
+        val centre = size / 2f
+        val inset = centre - radius + stroke / 2f
+        bounds.set(inset, inset, size - inset, size - inset)
 
-        drawTendencyArrow(canvas, cx, cy, radius)
-    }
-
-    private fun drawTendencyArrow(canvas: Canvas, cx: Float, cy: Float, radius: Float) {
-        val pressure = dev.local.weatherstudy.domain.type.StudyIndexLevel.Pressure
-        val dy = when (tendency) {
-            pressure.RISING -> -radius * ARROW_SPAN
-            pressure.FALLING -> radius * ARROW_SPAN
-            else -> 0f
-        }
-        arrowPaint.color = needleColor
-        arrowPath.reset()
-        if (tendency == pressure.STEADY) {
-            arrowPath.moveTo(cx - radius * ARROW_SPAN, cy + radius * ARROW_OFFSET)
-            arrowPath.lineTo(cx + radius * ARROW_SPAN, cy + radius * ARROW_OFFSET)
+        if (background != null) {
+            background.setBounds(0, 0, size.toInt(), size.toInt())
+            background.draw(canvas)
         } else {
-            arrowPath.moveTo(cx, cy + radius * ARROW_OFFSET - dy)
-            arrowPath.lineTo(cx, cy + radius * ARROW_OFFSET + dy)
-            arrowPath.moveTo(cx - ARROW_HEAD, cy + radius * ARROW_OFFSET - dy + dy * ARROW_HEAD_RATIO)
-            arrowPath.lineTo(cx, cy + radius * ARROW_OFFSET - dy)
-            arrowPath.lineTo(cx + ARROW_HEAD, cy + radius * ARROW_OFFSET - dy + dy * ARROW_HEAD_RATIO)
+            canvas.drawArc(bounds, START_DEGREES, SWEEP_DEGREES, false, trackPaint)
         }
-        canvas.drawPath(arrowPath, arrowPaint)
+        canvas.drawArc(bounds, START_DEGREES, SWEEP_DEGREES * value, false, arcPaint)
     }
 
     private companion object {
-        const val STROKE_WIDTH = 8f
-        const val NEEDLE_STROKE = 5f
-        const val ARROW_STROKE = 4f
-        const val NEEDLE_LENGTH = 0.7f
-        const val START_DEGREES = 150f
+        /** `col_50_FAFAFA` */
+        const val ARC_COLOR = 0x7FFAFAFA
+        const val TRACK_COLOR = 0x33FFFFFF
+        /** the original's own start angle: 0 at the lower left */
+        const val START_DEGREES = -210f
         const val SWEEP_DEGREES = 240f
-        const val ARROW_SPAN = 0.18f
-        const val ARROW_OFFSET = 0.45f
-        const val ARROW_HEAD = 8f
-        const val ARROW_HEAD_RATIO = 0.35f
     }
 }
 
@@ -535,10 +536,29 @@ class StudyPressureGraph @JvmOverloads constructor(
  * Corresponds conceptually to:
  * com.sec.android.daemonapp.app.detail.view.WindGraph
  *
- * Observed responsibility: a compass with a direction arrow. [directionDegree] comes
- * straight from the provider; the 16-point label is produced separately by
- * `StudyWindNotation.formatDirection` — the view draws the angle, the notation layer
- * names it.
+ * Session 4 rewrite. This drew a procedural ring with four ticks and a filled triangle
+ * whose length scaled with the speed. The original draws two bitmaps and rotates one:
+ *
+ * ```java
+ * canvas.drawBitmap(scaled(R.drawable.wind_bg, 109dp, 109dp), 0, 0, null);
+ * canvas.save();
+ * canvas.rotate(windDirectionDegree(direction), getWidth() / 2f, getHeight() / 2f);
+ * canvas.drawBitmap(scaled(R.drawable.wind_arrow, 109dp, 109dp), 0, 0, null);
+ * canvas.restore();
+ * ```
+ *
+ * `wind_bg` is the lettered compass ring - N, NE, E … - so the ring is artwork, not
+ * geometry, and the arrow is a separate full-size bitmap rotated about the centre. Speed
+ * does not enter into it: the needle is always the same length, which is the opposite of
+ * what the invented version did.
+ *
+ * **The direction table is inverted and that is deliberate.** `windDirectionDegree` maps
+ * S to 0°, W to 90°, N to 180°, E to 270° - a wind FROM the south is drawn pointing up
+ * the screen, i.e. the arrow shows where the wind is going. Reading those numbers as
+ * compass bearings would put every reading 180° out.
+ *
+ * The artwork is a LOCAL STUDY RESOURCE; without it the ring and arrow are drawn
+ * procedurally.
  */
 class StudyWindGraph @JvmOverloads constructor(
     context: Context,
@@ -550,14 +570,7 @@ class StudyWindGraph @JvmOverloads constructor(
     var directionDegree: Float = 0f
         set(value) { field = value; invalidate() }
 
-    /** 0..1, scales the arrow length */
-    var speedRatio: Float = 0f
-        set(value) { field = value.coerceIn(0f, 1f); invalidate() }
-
     var isCalm: Boolean = false
-        set(value) { field = value; invalidate() }
-
-    var arrowColor: Int = 0xFFFFFFFF.toInt()
         set(value) { field = value; invalidate() }
 
     private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -565,74 +578,74 @@ class StudyWindGraph @JvmOverloads constructor(
         strokeWidth = RING_STROKE
         color = 0x33FFFFFF
     }
-    private val tickPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = TICK_STROKE
-        color = 0x55FFFFFF
-    }
     private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val arrowPath = Path()
 
+    private val background = StudyStudyResource.drawable(context, "study_wind_bg")
+    private val arrow = StudyStudyResource.drawable(context, "study_wind_arrow")
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        val size = min(width, height).toFloat()
-        if (size <= 0f) return
+        val size = min(width, height).toInt()
+        if (size <= 0) return
         val cx = width / 2f
         val cy = height / 2f
-        val radius = size / 2f - RING_STROKE
 
-        canvas.drawCircle(cx, cy, radius, ringPaint)
-
-        // four cardinal ticks
-        for (i in 0 until CARDINAL_COUNT) {
-            val angle = Math.toRadians((i * (FULL_CIRCLE / CARDINAL_COUNT)).toDouble())
-            val inner = radius * TICK_INNER
-            canvas.drawLine(
-                cx + (inner * sin(angle)).toFloat(),
-                cy - (inner * cos(angle)).toFloat(),
-                cx + (radius * sin(angle)).toFloat(),
-                cy - (radius * cos(angle)).toFloat(),
-                tickPaint,
-            )
+        if (background != null) {
+            background.setBounds(0, 0, size, size)
+            background.draw(canvas)
+        } else {
+            canvas.drawCircle(cx, cy, size / 2f - RING_STROKE, ringPaint)
         }
 
         if (isCalm) return
 
-        // meteorological "from" direction: the arrow points where the wind is going
-        val angle = Math.toRadians((directionDegree + HALF_CIRCLE).toDouble())
-        val length = radius * (ARROW_MIN + (ARROW_MAX - ARROW_MIN) * speedRatio)
-        val tipX = cx + (length * sin(angle)).toFloat()
-        val tipY = cy - (length * cos(angle)).toFloat()
-        val leftAngle = angle + Math.toRadians(ARROW_SPREAD)
-        val rightAngle = angle - Math.toRadians(ARROW_SPREAD)
-        val backLength = length * ARROW_BACK
+        // the arrow points where the wind is GOING, hence the half turn
+        val rotation = directionDegree + HALF_CIRCLE
+        if (arrow != null) {
+            canvas.save()
+            canvas.rotate(rotation, cx, cy)
+            arrow.setBounds(0, 0, size, size)
+            arrow.draw(canvas)
+            canvas.restore()
+            return
+        }
 
-        arrowPaint.color = arrowColor
+        val angle = Math.toRadians(rotation.toDouble())
+        val length = (size / 2f) * ARROW_LENGTH
+        arrowPaint.color = 0xFFFFFFFF.toInt()
         arrowPath.reset()
-        arrowPath.moveTo(tipX, tipY)
-        arrowPath.lineTo(
-            cx + (backLength * sin(leftAngle)).toFloat(),
-            cy - (backLength * cos(leftAngle)).toFloat(),
-        )
+        arrowPath.moveTo(cx + (length * sin(angle)).toFloat(), cy - (length * cos(angle)).toFloat())
+        val left = angle + Math.toRadians(ARROW_SPREAD)
+        val right = angle - Math.toRadians(ARROW_SPREAD)
+        val back = length * ARROW_BACK
+        arrowPath.lineTo(cx + (back * sin(left)).toFloat(), cy - (back * cos(left)).toFloat())
         arrowPath.lineTo(cx, cy)
-        arrowPath.lineTo(
-            cx + (backLength * sin(rightAngle)).toFloat(),
-            cy - (backLength * cos(rightAngle)).toFloat(),
-        )
+        arrowPath.lineTo(cx + (back * sin(right)).toFloat(), cy - (back * cos(right)).toFloat())
         arrowPath.close()
         canvas.drawPath(arrowPath, arrowPaint)
     }
 
     private companion object {
         const val RING_STROKE = 4f
-        const val TICK_STROKE = 2f
-        const val TICK_INNER = 0.82f
-        const val CARDINAL_COUNT = 4
-        const val FULL_CIRCLE = 360f
         const val HALF_CIRCLE = 180f
-        const val ARROW_MIN = 0.35f
-        const val ARROW_MAX = 0.8f
+        const val ARROW_LENGTH = 0.8f
         const val ARROW_SPREAD = 150.0
         const val ARROW_BACK = 0.55f
+    }
+}
+
+/**
+ * Resolves a LOCAL STUDY RESOURCE by name, the same way `StudyIconProvider` does.
+ *
+ * The extracted artwork is absent from a fresh clone, so referencing it as
+ * `R.drawable.study_wind_bg` would stop the module compiling without it. Looked up by
+ * name instead; null means "draw it procedurally". DO NOT REDISTRIBUTE.
+ */
+private object StudyStudyResource {
+    fun drawable(context: Context, name: String): android.graphics.drawable.Drawable? {
+        @Suppress("DiscouragedApi")
+        val id = context.resources.getIdentifier(name, "drawable", context.packageName)
+        return if (id == 0) null else androidx.core.content.ContextCompat.getDrawable(context, id)
     }
 }
