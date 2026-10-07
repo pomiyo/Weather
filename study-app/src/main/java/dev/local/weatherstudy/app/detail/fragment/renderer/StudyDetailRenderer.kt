@@ -78,6 +78,15 @@ class StudyDetailRenderer(
     private val message: TextView = root.findViewById(R.id.detail_message)
     private val messageAction: Button = root.findViewById(R.id.detail_message_action)
 
+    /**
+     * `DetailAppBarOffsetChangedListener.actualScrollRange` - the fraction of the appbar's
+     * travel the header itself accounts for, which is what the illustration's shrink and
+     * fade are measured against rather than the whole scroll range. 1 - 94/216 = 0.565.
+     */
+    private val illustrationScrollRange: Float =
+        1f - root.resources.getDimension(R.dimen.study_detail_top_info_collapse_height) /
+            root.resources.getDimension(R.dimen.study_detail_top_info_expand_height)
+
     private var layoutManager: StaggeredGridLayoutManager? = null
     private var shownBackground: StudyDetailBackgroundState? = null
     private var pageCount = 0
@@ -188,23 +197,58 @@ class StudyDetailRenderer(
         // keeping the restacking visible through the first half, which is where it reads.
         val alpha = ((1f - clamped) / (1f - PAGE_FADE_START)).coerceIn(0f, 1f)
 
-        // The illustration fades on the same curve.
-        //
-        // It is a sibling of the scrolling content rather than a child of the header, so it
-        // does not move when the list scrolls - without this it would stay pinned in the
-        // top-right corner and show through the translucent cards as they pass over it.
-        // reference-ui/home-scroll-1.png settles the question: once the original is scrolled
-        // the figure is completely gone, not dimmed behind the cards, so it is faded rather
-        // than merely layered underneath.
-        illustration.alpha = alpha
-
-        val inner = headerPager.getChildAt(0) as? RecyclerView ?: return
-        for (i in 0 until inner.childCount) {
-            (inner.getChildAt(i) as? MotionLayout)?.let { page ->
+        val inner = headerPager.getChildAt(0) as? RecyclerView
+        var anyPage: MotionLayout? = null
+        for (i in 0 until (inner?.childCount ?: 0)) {
+            (inner?.getChildAt(i) as? MotionLayout)?.let { page ->
                 page.progress = clamped
                 page.alpha = alpha
+                if (anyPage == null) anyPage = page
             }
         }
+
+        // the illustration is not one of the pages, so it is driven whether or not any
+        // page has been laid out yet
+        applyIllustrationCollapse(clamped, anyPage)
+    }
+
+    /**
+     * `DetailAppBarOffsetChangedListener.onOffsetChanged` - the illustration SHRINKS as it
+     * fades, and both happen over the front of the collapse, not the back.
+     *
+     * The illustration is a sibling of the scrolling content rather than a child of the
+     * header, so it does not move when the list scrolls - without this it would stay pinned
+     * in the top-right corner and show through the translucent cards as they pass over it.
+     * reference-ui/home-scroll-1.png settles that much: once the original is scrolled the
+     * figure is completely gone, not dimmed behind the cards.
+     *
+     * What the fade alone missed is the curve and the scale. The original computes
+     *
+     *     f = min(0.5, appbarOffset / (1 - collapseHeight / expandHeight))
+     *     alpha = 1 - 2f        scale = 1 - f
+     *
+     * so with 94dp/216dp the figure is at half size and fully gone by an appbar offset of
+     * 0.282 - well before the header is half collapsed - where the previous version held it
+     * at full size and full opacity until 0.5 and only finished at 1.0.
+     *
+     * The pivot is the collapsed icon's right/top. The original reads those off
+     * `weather_collapse_icon`, a view in the app bar's coordinate space, and applies them to
+     * the illustration container's - the two differ by the app bar's own offset, so the
+     * convergence point lands just outside the figure's top-right corner rather than on the
+     * icon itself. That is reproduced as written: it is what the original does on screen.
+     * [page] stands in for that view's owner; this project has one illustration beside a
+     * pager of header pages where the original gives every page its own pair, and because
+     * the icon is laid out identically on every page, any laid-out page serves.
+     */
+    private fun applyIllustrationCollapse(clamped: Float, page: MotionLayout?) {
+        val f = (clamped / illustrationScrollRange).coerceAtMost(ILLUSTRATION_FADE_END)
+        illustration.alpha = 1f - 2f * f
+        illustration.scaleX = 1f - f
+        illustration.scaleY = 1f - f
+
+        val icon = page?.findViewById<View>(R.id.header_icon) ?: return
+        illustration.pivotX = icon.right.toFloat()
+        illustration.pivotY = icon.top.toFloat()
     }
 
     /** edge to edge: the header runs under the status bar, the list clears the gesture bar */
@@ -511,6 +555,11 @@ class StudyDetailRenderer(
         const val TITLE_FADE_START = 0.6f
         /** the collapse fraction at which the header page starts to fade out */
         const val PAGE_FADE_START = 0.5f
+        /**
+         * the cap the original puts on the illustration's curve: at 0.5 the figure is at
+         * half size and alpha 0, and it holds there for the rest of the collapse.
+         */
+        const val ILLUSTRATION_FADE_END = 0.5f
         const val SPINNER_COLOR = 0xFF1C313A.toInt()
     }
 }
