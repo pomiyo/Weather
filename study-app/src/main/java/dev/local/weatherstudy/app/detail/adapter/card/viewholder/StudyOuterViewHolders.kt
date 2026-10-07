@@ -187,6 +187,14 @@ class StudyInsightViewHolder(
         // no title: each page is already a titled statement
         title?.visibility = View.GONE
         pager.adapter = adapter
+        // `rvInsights` in the original carries android:nestedScrollingEnabled="false", as
+        // every nested list in detail_*_view_holder.xml does. A ViewPager2 cannot take the
+        // attribute - the flag belongs to the RecyclerView it wraps - so it is set here.
+        //
+        // Without it this card's horizontal nested scroll reaches the CoordinatorLayout and
+        // cancels the AppBarLayout's share of the SAME gesture; see the comment on
+        // study_detail_precipitation_view_holder.xml's list for the mechanism.
+        (pager.getChildAt(0) as? RecyclerView)?.isNestedScrollingEnabled = false
         pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) = showIndicator(position)
         })

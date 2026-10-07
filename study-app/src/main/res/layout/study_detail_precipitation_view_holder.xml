@@ -29,6 +29,26 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/card_title" />
+    <!--
+      nestedScrollingEnabled="false" is not cosmetic, and it is what the original does on
+      EVERY nested list in detail_*_view_holder.xml (7 of them; only detail_st_view_holder
+      omits it).
+
+      A nested list that keeps nested scrolling on starts a SECOND nested scroll on the
+      CoordinatorLayout - a horizontal one, axes=1 - in the same gesture and with the same
+      TYPE_TOUCH. CoordinatorLayout.onStartNestedScroll stores the verdict per type:
+
+          final boolean accepted = viewBehavior.onStartNestedScroll(..., axes, type);
+          lp.setNestedScrollAccepted(type, accepted);      // unconditional overwrite
+
+      The AppBarLayout's behavior declines the horizontal one, and that `false` overwrites
+      the `true` it recorded a millisecond earlier for the vertical scroll. onNestedPreScroll
+      then skips the AppBarLayout (`if (!lp.isNestedScrollAccepted(type)) continue;`) for the
+      rest of the gesture, so the card list scrolls while the header sits there expanded.
+
+      Observed as: put a finger on this card and drag up - the list moves, the header does
+      not. See reports/visual-comparison.md pass 13.
+    -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/precipitation_list"
         android:layout_width="0dp"
@@ -36,6 +56,7 @@
         android:layout_marginTop="@dimen/study_card_inner_spacing"
         android:clipChildren="false"
         android:clipToPadding="false"
+        android:nestedScrollingEnabled="false"
         android:orientation="horizontal"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintEnd_toEndOf="parent"
